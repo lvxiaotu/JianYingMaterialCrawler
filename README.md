@@ -4,6 +4,7 @@
 
 - 统一管理配置、请求头、Cookie 和存储目录
 - 支持元数据抓取、详情补全、下载任务入库
+- 支持实时搜索接口优先、本地 SQL 回退搜索
 - 支持断点续跑
 - 支持从 SQLite 迁移到 PostgreSQL
 - 支持本地 Web 控制台
@@ -162,6 +163,80 @@ python -m jianying_crawler.cli crawl text_template
 python -m jianying_crawler.cli crawl transition
 ```
 
+## 搜索命令
+
+当前项目已经内置搜索命令：
+
+```powershell
+python -m jianying_crawler.cli search 下雨
+python -m jianying_crawler.cli search 卡通脸 --crawler task_effect --limit 10
+python -m jianying_crawler.cli search 手写 --crawler subtitle_template --json
+python -m jianying_crawler.cli search 雨 --downloaded-only --json
+```
+
+当前搜索策略：
+
+- 默认先调用剪映实时搜索接口
+- 只有实时搜索没有命中时，才回退到本地 SQLite / PostgreSQL
+- 如果加 `--downloaded-only`，则直接查询本地数据库中已下载的记录
+
+当前已接入实时搜索的链路：
+
+```text
+sound_effect
+music
+sticker
+flower
+effect
+task_effect
+transition
+filter
+text_template
+subtitle_template
+template
+marketing_template
+official_material
+```
+
+支持参数：
+
+- `--crawler`
+  - 限定只搜索某一条链路
+  - 可重复传入多次
+- `--limit`
+  - 返回结果上限
+- `--json`
+  - 输出统一 JSON 结构，适合给外部程序或后续 skill 调用
+- `--downloaded-only`
+  - 只查本地库里已经下载过的结果
+
+当前统一 JSON 输出字段包括：
+
+- `crawler_name`
+- `resource_id`
+- `title`
+- `effect_type`
+- `panel`
+- `category_id`
+- `collection_id`
+- `source_kind`
+- `parent_resource_id`
+- `updated_at`
+- `downloaded`
+- `primary_downloaded`
+- `primary_target_path`
+- `material_type`
+
+搜索结果还会额外返回：
+
+- `search_mode`
+  - `live_only`
+  - `sql_fallback`
+  - `sql_downloaded_only`
+- `source`
+  - `live_search`
+  - `sql`
+
 ## 下载命令
 
 ### 下载前说明
@@ -306,6 +381,7 @@ python -m jianying_crawler.cli download sound_effect --limit 50 --until-empty --
 - 模板库
 - 营销模板
 - 素材包
+- 搜索接口统一查询
 
 ## 注意
 
@@ -313,3 +389,4 @@ python -m jianying_crawler.cli download sound_effect --limit 50 --until-empty --
 - 你需要先在配置页里填入可用的 Cookie 和常用 Header
 - 某些接口的 `sign`、`x-ss-stub`、`X-Helios`、`X-Medusa` 仍可能需要按抓包更新
 - PostgreSQL 已经接入，但你本机仍需要准备数据库服务本体
+- 模板搜索走的是 replicate 风格请求体系，和普通素材搜索不是同一套请求头

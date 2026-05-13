@@ -468,3 +468,185 @@ class Repository:
             "totals": totals,
             "crawlers": crawler_list,
         }
+
+    def search_items(
+        self,
+        query_text: str,
+        crawler_names: list[str] | None = None,
+        limit: int = 20,
+        downloaded_only: bool = False,
+    ) -> list[dict[str, Any]]:
+        normalized_query = query_text.strip()
+        if not normalized_query:
+            return []
+
+        like_value = f"%{normalized_query}%"
+        query = """
+            SELECT
+                i.crawler_name,
+                i.resource_id,
+                COALESCE(i.title, '') AS title,
+                COALESCE(i.effect_type, '') AS effect_type,
+                COALESCE(i.panel, '') AS panel,
+                COALESCE(i.category_id, '') AS category_id,
+                COALESCE(i.collection_id, '') AS collection_id,
+                COALESCE(i.source_kind, '') AS source_kind,
+                COALESCE(i.parent_resource_id, '') AS parent_resource_id,
+                COALESCE(i.updated_at, '') AS updated_at
+            FROM items i
+            WHERE (
+                COALESCE(i.title, '') LIKE ?
+                OR COALESCE(i.resource_id, '') LIKE ?
+                OR COALESCE(i.category_id, '') LIKE ?
+                OR COALESCE(i.collection_id, '') LIKE ?
+            )
+        """
+        params: list[Any] = [like_value, like_value, like_value, like_value]
+
+        if crawler_names:
+            filtered_names = [name.strip() for name in crawler_names if name.strip()]
+            if filtered_names:
+                placeholders = ", ".join(["?"] * len(filtered_names))
+                query += f" AND i.crawler_name IN ({placeholders})"
+                params.extend(filtered_names)
+
+        query += """
+            ORDER BY
+                CASE WHEN COALESCE(i.title, '') = ? THEN 0 ELSE 1 END,
+                CASE WHEN COALESCE(i.title, '') LIKE ? THEN 0 ELSE 1 END,
+                COALESCE(i.updated_at, '') DESC,
+                i.crawler_name,
+                i.resource_id
+            LIMIT ?
+        """
+        params.extend([normalized_query, like_value, int(limit)])
+
+        with connect(self.config) as conn:
+            rows = conn.execute(query, tuple(params)).fetchall()
+            base_results = [dict(row) for row in rows]
+
+            if not base_results:
+                return []
+
+            resource_ids = [str(_row_get(row, "resource_id", "") or "") for row in base_results]
+            placeholders = ", ".join(["?"] * len(resource_ids))
+            download_rows = conn.execute(
+                f"""
+                SELECT
+                    d.resource_id,
+                    SUM(CASE WHEN d.status = 'done' THEN 1 ELSE 0 END) AS any_done_count,
+                    SUM(
+                        CASE
+                            WHEN d.status = 'done'
+                             AND (
+                                d.url_kind IN (
+                                    'primary_asset_0',
+                                    'download_info',
+                                    'preview_audio',
+                                    'video_url',
+                                    'template_url',
+                                    'draft_package_url',
+                                    'template_json',
+                                    'origin_video_url',
+                                    'origin_watermark_video_url'
+                                )
+                                OR d.url_kind LIKE 'recipe_material_%'
+                                OR d.url_kind LIKE 'origin_video_%'
+                                OR d.url_kind LIKE 'transcoded_video_%'
+                             )
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) AS primary_done_count,
+                    MAX(
+                        CASE
+                            WHEN d.status = 'done'
+                             AND (
+                                d.url_kind IN (
+                                    'primary_asset_0',
+                                    'download_info',
+                                    'preview_audio',
+                                    'video_url',
+                                    'template_url',
+                                    'draft_package_url',
+                                    'template_json',
+                                    'origin_video_url',
+                                    'origin_watermark_video_url'
+                                )
+                                OR d.url_kind LIKE 'recipe_material_%'
+                                OR d.url_kind LIKE 'origin_video_%'
+                                OR d.url_kind LIKE 'transcoded_video_%'
+                             )
+                             AND COALESCE(d.target_path, '') <> ''
+                            THEN d.target_path
+                            ELSE ''
+                        END
+                    ) AS primary_target_path
+                FROM downloads d
+                WHERE d.resource_id IN ({placeholders})
+                GROUP BY d.resource_id
+                """,
+                tuple(resource_ids),
+            ).fetchall()
+
+        download_map = {
+            str(_row_get(row, "resource_id", "") or ""): dict(row)
+            for row in download_rows
+        }
+
+        results: list[dict[str, Any]] = []
+        for row in base_results:
+            title = str(_row_get(row, "title", "") or "")
+            effect_type = str(_row_get(row, "effect_type", "") or "")
+            panel = str(_row_get(row, "panel", "") or "")
+            crawler_name = str(_row_get(row, "crawler_name", "") or "")
+            resource_id = str(_row_get(row, "resource_id", "") or "")
+            download_meta = download_map.get(resource_id, {})
+            primary_target_path = str(download_meta.get("primary_target_path") or "")
+            primary_done_count = int(download_meta.get("primary_done_count") or 0)
+            any_done_count = int(download_meta.get("any_done_count") or 0)
+
+            if downloaded_only and any_done_count <= 0:
+                continue
+
+            results.append(
+                {
+                    "crawler_name": crawler_name,
+                    "resource_id": resource_id,
+                    "title": title,
+                    "effect_type": effect_type,
+                    "panel": panel,
+                    "category_id": str(_row_get(row, "category_id", "") or ""),
+                    "collection_id": str(_row_get(row, "collection_id", "") or ""),
+                    "source_kind": str(_row_get(row, "source_kind", "") or ""),
+                    "parent_resource_id": str(_row_get(row, "parent_resource_id", "") or ""),
+                    "updated_at": str(_row_get(row, "updated_at", "") or ""),
+                    "downloaded": any_done_count > 0,
+                    "primary_downloaded": primary_done_count > 0,
+                    "primary_target_path": primary_target_path,
+                    "material_type": self._infer_material_type(crawler_name, effect_type, panel),
+                }
+            )
+        return results[: int(limit)]
+
+    @staticmethod
+    def _infer_material_type(crawler_name: str, effect_type: str, panel: str) -> str:
+        crawler_name = crawler_name.strip()
+        effect_type = effect_type.strip()
+        panel = panel.strip()
+
+        if crawler_name in {"music", "sound_effect"}:
+            return "audio"
+        if crawler_name in {"template", "marketing_template", "text_template", "subtitle_template"}:
+            return "template"
+        if crawler_name == "material_pack":
+            return "bundle"
+        if crawler_name in {"sticker", "flower", "filter", "transition", "effect", "task_effect"}:
+            return "effect"
+        if crawler_name == "official_material":
+            return "material"
+        if effect_type in {"7", "8"}:
+            return "effect"
+        if panel in {"effects2", "face-prop"}:
+            return "effect"
+        return "unknown"

@@ -129,6 +129,33 @@ device_type=x86_64
 
 如果需要 1:1 回放请求，请直接回查对应 `.saz` / `.txt` 原文件。
 
+### 2.7 搜索接口速览（2026-05-13 新增）
+
+当前新增抓包已经证明：剪映“搜索”并不是单一接口，而是至少分成 4 组：
+
+```text
+通用素材搜索
+-> 音乐搜索
+-> 模板搜索
+-> 搜索词推荐
+```
+
+当前已确认的分工如下：
+
+| 搜索接口 | 主列表字段 | 分页字段 | 当前说明 |
+|---|---|---|---|
+| `artist/v1/effect/search` | `data.effect_item_list` | `data.has_more`、`data.next_offset` | 大多数素材搜索共用这一套 |
+| `lv/v1/search/songs` | `response` 二次解析后的 `songs` | `has_more`、`next_offset` | 音乐搜索独立接口 |
+| `lv/v1/pc/search/templates` | `data.template_list` | `data.has_more`、`data.next_cursor` | 模板搜索独立接口 |
+| `artist/v1/effect/get_search_words` | 无素材结果列表 | 无 | 搜索联想词，不是素材结果页 |
+
+当前最重要的搜索结论：
+
+- 大多数素材搜索都走 `artist/v1/effect/search`
+- 音乐搜索不走 `effect/search`
+- 模板搜索不走 `replicate/get_collection_templates`
+- 当前只抓到字幕模板联想词，还没抓到字幕模板真实搜索结果页
+
 ## 3. 接口总索引
 
 说明：
@@ -151,6 +178,10 @@ device_type=x86_64
 | `random_prompt` | `https://lv-api-sinfonlineb.ulikecam.com/artist/v1/aigc_effect/random_prompt` | 拉 AIGC 贴纸提示词推荐 | 贴纸 | `tiezhi.saz`、`tiezhi.json` |
 | `pc/replicate/get_collection_templates` | `https://lv-pc-api-sinfonlineb.ulikecam.com/lv/v1/pc/replicate/get_collection_templates` | 拉模板合集下的模板分页列表 | 模板库、营销模板 | `tuijianmuban.saz`、`yingxiaojingxuan.saz` |
 | `pc/replicate/multi_get_templates` | `https://lv-pc-api-sinfonlineb.ulikecam.com/lv/v1/pc/replicate/multi_get_templates` | 拉单个模板详情 | 模板库、营销模板 | `tuijianmubanxiangqing.saz`、`yingxiaojingxuanxiangqing.saz` |
+| `effect/search` | `https://lv-api-sinfonlineb.ulikecam.com/artist/v1/effect/search` | 通用素材搜索结果列表 | 综合素材、音效、花字、贴纸、普通特效、人物特效、转场、花字模板、滤镜 | `search.saz`、`search-effect.saz`、`search-fllower.saz`、`search-teizhi.saz`、`search-texiao.saz`、`search-rengwutexiao.saz`、`search-zhuanchang.saz`、`search-huazimuban.saz`、`search-lvjing.saz` |
+| `search/songs` | `https://lv-pc-api-sinfonlineb.ulikecam.com/lv/v1/search/songs` | 音乐搜索结果列表 | 音乐搜索 | `search-song.saz` |
+| `pc/search/templates` | `https://lv-pc-api-sinfonlineb.ulikecam.com/lv/v1/pc/search/templates` | 模板搜索结果列表 | 模板搜索 | `search-muban.saz` |
+| `get_search_words` | `https://lv-api-sinfonlineb.ulikecam.com/artist/v1/effect/get_search_words` | 搜索联想词 / 热词 | 字幕模板搜索联想词 | `search-zimumuban.saz` |
 
 ## 4. 文件索引
 
@@ -295,7 +326,7 @@ device_type=x86_64
 
 | 文件 | 角色 | 说明 |
 |---|---|---|
-| `C:/Users/wu/Documents/Codex/2026-05-11/fiddler-v2rayn-10808/yingxiao.saz` | `已抓到请求` | `replicate/get_collections(collection_type=11)` |
+| `C:/Users/wu/Documents/Codex/2026-05-11/fiddler-v2rayn-10808/yingxiao.saz` | `已抓到请求` | `replicate/get_collections(collection_type=11)`；注意工作区 2026-05-13 新覆盖的同名样本已变成 `pc/search/templates`，见 4.15 |
 | `C:/Users/wu/Documents/Codex/2026-05-11/fiddler-v2rayn-10808/yingxiao.json` | `已抓到响应` | 营销模板合集 / 筛选配置 |
 | `C:/Users/wu/Documents/Codex/2026-05-11/fiddler-v2rayn-10808/yingxiaojingxuan.saz` | `已抓到请求` | `pc/replicate/get_collection_templates(id=11029)` |
 | `C:/Users/wu/Documents/Codex/2026-05-11/fiddler-v2rayn-10808/yingxiaojingxuan.json` | `已抓到响应` | 营销精选模板列表 |
@@ -314,6 +345,41 @@ device_type=x86_64
 | `C:/Users/wu/Documents/Codex/2026-05-11/fiddler-v2rayn-10808/remensucaibaoxiangqing.saz` | `已抓到请求` | 素材包详情 `mget_artist_item` |
 | `C:/Users/wu/Documents/Codex/2026-05-11/fiddler-v2rayn-10808/sucaibaoxiangqing.json` | `已抓到响应` | 单个素材包详情 |
 | `C:/Users/wu/Documents/Codex/2026-05-11/fiddler-v2rayn-10808/remensucaibaoxiangqingxiazai.saz` | `已抓到资源 GET` | 素材包 ZIP 包下载 |
+
+### 4.15 搜索接口补充样本（2026-05-13 新增）
+
+| 文件 | 角色 | 说明 |
+|---|---|---|
+| `C:\Users\wu\Documents\Fiddler2\Captures\search.saz` | `已抓到请求` | `effect/search`，综合素材搜索，请求里 `effect_type=201`、`scene=material_lib_c_v2` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search.json` | `已抓到响应` | 综合素材搜索结果，实际返回 `effect_type=5/9` 混合 |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-effect.saz` | `已抓到请求` | `effect/search`，音效搜索，请求里 `effect_type=3` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-effect.json` | `已抓到响应` | 音效搜索结果，结果项带 `audio_effect` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-fllower.saz` | `已抓到请求` | `effect/search`，花字搜索，请求里 `effect_type=1` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-fllower.json` | `已抓到响应` | 花字搜索结果，结果项带 `word_art` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-teizhi.saz` | `已抓到请求` | `effect/search`，贴纸搜索，请求里 `effect_type=2` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\tiezhi.json` | `已抓到响应` | 贴纸搜索结果，结果项带 `sticker` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-texiao.saz` | `已抓到请求` | `effect/search`，普通特效搜索，请求里 `effect_type=7` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-texiao.json` | `已抓到响应` | 普通特效搜索结果，结果项带 `special_effect` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-rengwutexiao.saz` | `已抓到请求` | `effect/search`，人物特效搜索样本，请求体仍表现为 `effect_type=7` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-rengwutexiao.json` | `已抓到响应` | 人物特效搜索结果，结构与普通特效搜索同构 |
+| `E:/sucai/crawler_project/fiddler-v2rayn-10808/renwutexiao1.saz` | `已抓到请求` | `effect/search`，相关特效搜索第 1 页，`effect_type=7`，`query=闪烁`，`search_id=""` |
+| `E:/sucai/crawler_project/fiddler-v2rayn-10808/renwutexiao5.saz` | `已抓到请求` | `effect/search`，相关特效搜索第 2 页，`effect_type=7`，`offset=50`，回填首屏 `search_id` |
+| `E:/sucai/crawler_project/fiddler-v2rayn-10808/renwutexiao2.saz` | `已抓到请求` | `effect/search`，相关特效搜索第 1 页，`effect_type=8`，`query=闪烁`，`search_id=""` |
+| `E:/sucai/crawler_project/fiddler-v2rayn-10808/renwutexiao4.saz` | `已抓到请求` | `effect/search`，相关特效搜索第 2 页，`effect_type=8`，`offset=50`，回填首屏 `search_id` |
+| `E:/sucai/crawler_project/fiddler-v2rayn-10808/renwutexiao6.saz` | `已抓到请求` | `effect/search`，相关特效搜索第 3 页，`effect_type=8`，`offset=100`，继续沿用同一个 `search_id` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-zhuanchang.saz` | `已抓到请求` | `effect/search`，转场搜索，请求里 `effect_type=19` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-zhuanchang.json` | `已抓到响应` | 转场搜索结果 |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-huazimuban.saz` | `已抓到请求` | `effect/search`，花字模板搜索，请求里 `effect_type=6`、`scene=vimo_text-template` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-huazimuban.json` | `已抓到响应` | 花字模板搜索结果，结果项带 `text_template` 和依赖信息 |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-lvjing.saz` | `已抓到请求` | `effect/search`，滤镜搜索，请求里 `effect_type=12` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-lvjing.json` | `已抓到响应` | 滤镜搜索结果，结果项带 `filter` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-song.saz` | `已抓到请求` | `search/songs`，音乐搜索，请求体含 `keyword`、`offset`、`count` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-song.json` | `已抓到响应` | 音乐搜索结果，真正列表在顶层 `response` 字符串中 |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-muban.saz` | `已抓到请求` | `pc/search/templates`，模板搜索 |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-muban.json` | `已抓到响应` | 模板搜索结果，主列表字段是 `template_list` |
+| `E:/sucai/crawler_project/fiddler-v2rayn-10808/yingxiao.saz` | `已抓到请求` | 最新模板搜索样本：`pc/search/templates`，`keyword="中秋"`，`channels=["lv_template"]`，响应 `channel=lv_template` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-zimumuban.saz` | `已抓到请求` | `get_search_words(effect_type=48)` |
+| `C:\Users\wu\Documents\Fiddler2\Captures\search-zimumuban.json` | `已抓到响应` | 只返回推荐词、热词、默认词，不返回素材结果列表 |
 
 ## 5. 分类型详解
 
@@ -4106,3 +4172,596 @@ panel / category_id / category_key / collection id / cursor / offset
 先看 ressdk_db 和 image
 真正媒体文件目前仍建议单独做一次下载对照实测
 ```
+
+## 13. 搜索接口补充（2026-05-13 新增）
+
+说明：
+- 本章把新增搜索抓包正式并入总文档。
+- 它和前面的“列表接口 / 详情接口 / 下载接口”不是对立关系，而是补充“如何通过搜索入口进入这些链路”。
+- 如果后面要做搜索 crawler，优先看这一章。
+
+### 13.1 先说结论
+
+当前新增抓包里的搜索接口，可以稳定分成 4 组：
+
+| 组别 | 主要接口 | 典型样本 | 结果主列表 | 分页字段 | 与本地代码关系 |
+|---|---|---|---|---|---|
+| 通用素材搜索 | `POST https://lv-api-sinfonlineb.ulikecam.com/artist/v1/effect/search` | `search.json`、`search-effect.json`、`tiezhi.json` 等 | `data.effect_item_list` | `data.has_more` + `data.next_offset` | 可直接复用现有 `iter_effect_items`、`extract_common_attr`、`get_effect_item_identity` |
+| 音乐搜索 | `POST https://lv-pc-api-sinfonlineb.ulikecam.com/lv/v1/search/songs` | `search-song.json` | `response` 二次解析后的 `songs` | `has_more` + `next_offset` | 可直接复用现有 `iter_song_items` 和 `music.py` 的入库思路 |
+| 模板搜索 | `POST https://lv-pc-api-sinfonlineb.ulikecam.com/lv/v1/pc/search/templates` | `search-muban.json` | `data.template_list` | `data.has_more` + `data.next_cursor` | 结构与现有模板详情链路接近，但当前项目还不能直接复用分页与列表解析 |
+| 搜索词推荐 | `POST https://lv-api-sinfonlineb.ulikecam.com/artist/v1/effect/get_search_words` | `search-zimumuban.json` | 无素材结果列表 | 无 | 这是联想词接口，不是字幕模板结果列表接口 |
+
+核心结论：
+
+- 大多数“素材搜索”都走 `artist/v1/effect/search`
+- `search-song` 是独立音乐搜索接口
+- `search-muban` 是独立模板搜索接口
+- `search-zimumuban` 当前抓到的只是“字幕模板搜索联想词”，不是“字幕模板搜索结果”
+
+### 13.2 与本地项目的直接映射
+
+#### 13.2.1 已经可以直接复用的公共解析器
+
+本地这些公共函数已经能直接吃掉大部分搜索响应：
+
+- `jianying_crawler/crawlers/common.py`
+- `unwrap_response_payload`
+  - 对 `search-song.json` 这种“真正结果放在 `response` 字符串里”的情况已经兼容
+  - 对 `search-effect.json` 这类“结果直接在 `data` 中”的情况也已经兼容
+- `iter_effect_items`
+  - 已适配 `effect_item_list`
+- `iter_song_items`
+  - 已适配 `songs`
+- `extract_common_attr`
+  - 可直接提取 `common_attr`
+- `get_effect_item_identity`
+  - 可直接从搜索结果里拿 `resource_id / effect_type / source`
+
+#### 13.2.2 现有 crawler 的复用关系
+
+| 搜索方向 | 抓包样本 | 本地 crawler | 复用程度 | 说明 |
+|---|---|---|---|---|
+| 音效搜索 | `search-effect.*` | `sound_effect.py` | 高 | 结果就是 `effect_type=3` 的音效项，后续详情仍可走 `mget_item` |
+| 花字搜索 | `search-fllower.*` | `flower.py` | 高 | 结果是 `effect_type=1`，结构与现有花字列表一致 |
+| 贴纸搜索 | `search-teizhi.saz` + `tiezhi.json` | `sticker.py` | 高 | 结果是 `effect_type=2`，项里有 `sticker` 子对象 |
+| 普通特效搜索 | `search-texiao.*` | `effect.py` | 高 | 结果是 `effect_type=7`，项里有 `special_effect` |
+| 人物特效搜索 | `search-rengwutexiao.*` | `task_effect.py` / `effect.py` | 中 | 抓包体里没有明显 `panel=face-prop` 之类的区分信息，结构上与普通特效搜索相同 |
+| 转场搜索 | `search-zhuanchang.*` | `transition.py` | 高 | 结果是 `effect_type=19` |
+| 花字模板搜索 | `search-huazimuban.*` | `text_template.py` | 高 | 结果是 `effect_type=6`，并带 `text_template` 子对象 |
+| 滤镜搜索 | `search-lvjing.*` | `filter.py` | 高 | 结果是 `effect_type=12`，并带 `filter` 子对象 |
+| 官方素材搜索 | `search.json` | `official_material.py` | 高 | 搜索请求用 `effect_type=201`，但返回项实际混合 `effect_type=5` 和 `9` |
+| 音乐搜索 | `search-song.*` | `music.py` | 高 | 字段和现有音乐链路高度一致 |
+| 模板搜索 | `search-muban.*` | `template.py` / `marketing_template.py` | 中 | 详情资源字段很像现有模板，但列表字段名和分页字段不同 |
+| 字幕模板搜索 | `search-zimumuban.*` | `subtitle_template.py` | 低 | 只抓到联想词接口，没抓到真实结果列表 |
+
+### 13.3 通用素材搜索：`artist/v1/effect/search`
+
+#### 13.3.1 请求模式
+
+接口：
+
+```text
+POST https://lv-api-sinfonlineb.ulikecam.com/artist/v1/effect/search
+```
+
+共同特征：
+
+- Query 中仍带完整设备信息、版本信息、`aid=3704`、`channel=jianyingpro_0`、`effect_sdk_version=21.2.0`
+- Body 基本长这样：
+
+```json
+{
+  "app_id": 3704,
+  "count": 50,
+  "effect_type": 7,
+  "offset": 0,
+  "query": "心形",
+  "search_id": "",
+  "need_recommend": false,
+  "replicate_sdk_version": "",
+  "search_option": {
+    "aspect_ratio": "",
+    "category_list": [],
+    "effect_segment_type": null,
+    "filter_uncommercial": false,
+    "scene": "",
+    "sticker_type": 0
+  }
+}
+```
+
+共同返回结构：
+
+```json
+{
+  "ret": 0,
+  "errmsg": "",
+  "data": {
+    "effect_item_list": [],
+    "has_more": true,
+    "next_offset": 50,
+    "search_id": "2026...",
+    "request_id": "2026...",
+    "effect_type": 7,
+    "related_words": []
+  }
+}
+```
+
+可以直接下的结论：
+
+- 分页依赖 `next_offset`
+- 会返回搜索态的 `search_id`
+- 列表项和现有分类抓取里的 `effect_item_list` 基本同构
+
+推断：
+
+- 第二页请求会把首屏返回的 `data.search_id` 回填到下一次请求的 `search_id`
+- 贴纸搜索第 2 页样本 `search-tiezhi2.saz` 已经实锤这一点
+- 目前仍缺的是：其他搜索类型是否全部严格沿用同一翻页规则
+
+#### 13.3.2 分类样本对照
+
+| 样本 | 请求关键词 | 请求 `effect_type` | `search_option.scene` | 返回项里的核心子对象 | 返回项实际 `effect_type` | 本地建议映射 |
+|---|---|---:|---|---|---:|---|
+| `search-effect` | `欢呼` | 3 | `""` | `audio_effect` | 3 | `sound_effect` |
+| `search-fllower` | `粉色` | 1 | `""` | `word_art` | 1 | `flower` |
+| `search-teizhi` / `tiezhi.json` | `春天` | 2 | `""` | `sticker` | 2 | `sticker` |
+| `search-texiao` | `心形` | 7 | `""` | `special_effect` | 7 | `effect` |
+| `search-rengwutexiao` | `马赛克` | 7 | `""` | `special_effect` | 7 | `task_effect` 或 `effect` |
+| `search-zhuanchang` | `旋转` | 19 | `""` | 无专门顶层子对象 | 19 | `transition` |
+| `search-huazimuban` | `划重点` | 6 | `vimo_text-template` | `text_template` | 6 | `text_template` |
+| `search-zimu` / `search-zimu2.json` | `手写` | 48 | `vimo_subtitle-template` | `subtitle_template` | 48 | `subtitle_template` |
+| `search-lvjing` | `天空` | 12 | `""` | `filter` | 12 | `filter` |
+| `search.json` | `天空` | 201 | `material_lib_c_v2` | `video` / `image` | 5、9 | `official_material` |
+
+#### 13.3.3 各条链路的关键差异
+
+音效搜索：
+- 样本：`search-effect.saz` + `search-effect.json`
+- 返回 `data.effect_item_list` 共有 50 条
+- 项结构：`author` + `common_attr` + `audio_effect`
+- 这条链路最接近现有 `sound_effect.py`
+
+花字搜索：
+- 样本：`search-fllower.saz` + `search-fllower.json`
+- 返回 `effect_type=1`
+- 项结构：`author` + `common_attr` + `word_art`
+- 这条链路可直接复用 `flower.py` 的入库和详情补全
+
+贴纸搜索：
+- 样本：`search-teizhi.saz` + `tiezhi.json`
+- 返回 `effect_type=2`
+- 项结构：`author` + `common_attr` + `sticker`
+- 与本地 `sticker.py` 的普通贴纸项结构一致
+
+普通特效搜索：
+- 样本：`search-texiao.saz` + `search-texiao.json`
+- 返回 `effect_type=7`
+- 项结构：`author` + `common_attr` + `special_effect`
+- 与 `effect.py` 的特效列表项结构一致
+
+人物 / 任务特效相关搜索：
+- 老样本：`search-rengwutexiao.saz` + `search-rengwutexiao.json`
+- 这组老样本返回 48 条，请求体表现为 `effect_type=7`
+- 新增分页样本：
+  - `renwutexiao1.saz` / `renwutexiao5.saz`：`effect_type=7` 第 1 / 2 页
+  - `renwutexiao2.saz` / `renwutexiao4.saz` / `renwutexiao6.saz`：`effect_type=8` 第 1 / 2 / 3 页
+- 两条分支的结果项结构都和普通特效搜索同构，都是 `author + common_attr + special_effect`
+
+这一条现在的结论要更新为：
+- 不能再简单视为“只是普通特效搜索的展示口径差异”
+- 至少在搜索协议层，`effect_type=7` 和 `effect_type=8` 两条分支都真实存在
+- 结合面板与分类在线回放，当前已经可以基本锁定：
+  - `effects2` 面板 = 普通特效 = `effect_type=7`
+  - `face-prop` 面板 = 人物 / 任务特效 = `effect_type=8`
+  - 剩下没法 100% 静态证明的，只是 UI 文案里“人物特效”和“任务特效”是否是同一面板在不同版本下的命名差异
+
+花字模板搜索：
+- 样本：`search-huazimuban.saz` + `search-huazimuban.json`
+- 请求里最有区分度的字段是：
+
+```json
+"effect_type": 6,
+"search_option": {
+  "scene": "vimo_text-template"
+}
+```
+
+- 结果项里带 `text_template`
+- `common_attr.sdk_extra` 中已经出现 `depend_resource_list`
+
+这意味着：
+- 仅靠搜索结果页就能知道它属于组合类文字模板
+- 真正要补全子素材，仍建议复用本地 `text_template.py` 的详情与依赖展开逻辑
+
+字幕模板搜索：
+- 样本：`search-zimu.saz` + `search-zimu2.json`
+- 请求里最有区分度的字段是：
+
+```json
+"effect_type": 48,
+"search_option": {
+  "scene": "vimo_subtitle-template"
+}
+```
+
+- 结果项结构：
+  - `author`
+  - `common_attr`
+  - `subtitle_template`
+- `common_attr.sdk_extra` 中已经能看到 `depend_resource_list`
+
+这说明：
+- 字幕模板真实搜索结果页已经抓到了
+- 它不是 `get_search_words`
+- 它在协议层和花字模板搜索非常接近，只是 `effect_type` 和 `scene` 不同
+- 后续依赖展开建议直接复用本地 `subtitle_template.py`
+
+滤镜搜索：
+- 样本：`search-lvjing.saz` + `search-lvjing.json`
+- 返回 `effect_type=12`
+- 项结构：`author` + `common_attr` + `filter`
+- 与本地 `filter.py` 对应得很稳
+
+官方素材搜索：
+- 样本：`search.saz` + `search.json`
+- 请求层是：
+
+```json
+"effect_type": 201,
+"search_option": {
+  "scene": "material_lib_c_v2"
+}
+```
+
+- 但返回结果不是单一 `effect_type=201`
+- 样本里实际返回：
+  - `effect_type=5` 共 44 条
+  - `effect_type=9` 共 5 条
+- 结果项里会出现：
+  - 视频素材：`video`
+  - 图片素材：`image`
+
+这说明：
+- `201` 更像“素材库综合搜索域”而不是最终素材类型
+- 本地最适合映射到 `official_material.py`
+- 搜索结果可以直接沿用 `official_material.py` 里对 `video.origin_video`、`video.transcoded_video`、`download_info.url` 的下载链接提取思路
+
+### 13.4 音乐搜索：`lv/v1/search/songs`
+
+接口：
+
+```text
+POST https://lv-pc-api-sinfonlineb.ulikecam.com/lv/v1/search/songs
+```
+
+样本：
+- `search-song.saz`
+- `search-song.json`
+
+请求体：
+
+```json
+{
+  "count": 50,
+  "filter_paid_type": [],
+  "keyword": "安静",
+  "offset": 0,
+  "scene": 0
+}
+```
+
+结构特征：
+- 顶层虽然有 `data`
+- 但真正完整结果还会被塞进顶层字符串字段 `response`
+- 本地 `unwrap_response_payload` 已能自动二次 JSON 解析
+
+主要字段：
+
+| 字段 | 说明 |
+|---|---|
+| `songs` | 主结果列表 |
+| `has_more` | 是否还有下一页 |
+| `next_offset` | 下一页偏移 |
+| `search_id` | 搜索会话 ID |
+| `source` | 当前样本值为 `search` |
+
+单项字段与本地 `music.py` 的对齐度很高：
+
+- `id` / `web_id`
+- `title`
+- `author`
+- `preview_url`
+- `cover_url`
+- `beats`
+- `business_info`
+- `strategy_info`
+
+当前结论：
+- 音乐搜索几乎可以直接复用 `music.py` 的入库、去重、下载链接登记逻辑
+- 这条链路和 `sound_effect` 不应混成一种搜索实现
+
+### 13.5 模板搜索：`pc/search/templates`
+
+接口：
+
+```text
+POST https://lv-pc-api-sinfonlineb.ulikecam.com/lv/v1/pc/search/templates
+```
+
+样本：
+- `search-muban.saz`
+- `search-muban.json`
+
+请求体：
+
+```json
+{
+  "channels": ["lv_template"],
+  "count": 32,
+  "cursor": 0,
+  "extra": null,
+  "filter_paid_template": false,
+  "filters": {
+    "duration": [],
+    "fragment_count": [],
+    "screen_style": ["landscape", "portrait"],
+    "sub_category_ids": []
+  },
+  "keyword": "当年",
+  "search_entrance": "pc_edit_page",
+  "search_id": "",
+  "search_source": "input",
+  "sort_type": 0
+}
+```
+
+响应主结构：
+
+| 字段 | 说明 |
+|---|---|
+| `data.template_list` | 模板搜索结果列表 |
+| `data.has_more` | 是否还有下一页 |
+| `data.next_cursor` | 下一页 cursor，当前样本值是字符串 `"32"` |
+| `data.search_id` | 搜索会话 ID |
+| `data.channel` | 当前样本值为 `lv_template` |
+| `data.filter_options` | 模板搜索筛选选项 |
+
+和现有模板链路的关系：
+- 结果项字段和 `template.py` / `marketing_template.py` 里的详情字段非常像
+- 搜索结果里已经能直接看到：
+  - `template_url`
+  - `video_url`
+  - `draft_package_url`
+  - `template_json`
+  - `origin_video_info`
+
+这意味着模板搜索不一定要先跑 collection 才能拿下载链接。
+
+但当前代码还不能直接无改动复用，原因有两个：
+
+1. 本地 `iter_template_items` 只认：
+   - `item_list`
+   - `templates`
+2. 本地 `get_new_cursor` 只认：
+   - `new_cursor`
+
+而模板搜索实际是：
+- 列表字段：`template_list`
+- 分页字段：`next_cursor`
+
+所以模板搜索如果要接进项目，最少要补：
+- 一个模板搜索专用列表解析器，或扩展 `iter_template_items`
+- 一个能读取 `next_cursor` 的分页辅助函数
+
+补充判断：
+- 本次新增抓包只明确抓到了 `channels=["lv_template"]`
+- 没有单独抓到 `marketing_template` 搜索请求
+- 但从现有模板体系看，营销模板搜索很可能仍是同一接口族，只是 `channels`、筛选项或入口字段不同
+- 这一句属于结构推断，不是本次抓包实锤
+
+在线回放实测补充（2026-05-13）：
+- 直接用普通 `post_json` 去打 `pc/search/templates`，会返回 `ret=1014`、`errmsg=system busy`
+- 改用 replicate 风格请求头和签名后，`channels=["lv_template"]` 可以稳定返回结果
+- 同样改用 replicate 风格请求头后：
+  - `channels=["lv_marketing_template"]` 返回成功，但 `template_list=[]`
+  - `channels=["marketing_template"]` 返回成功，但 `template_list=[]`
+  - `channels=["lv_template","lv_marketing_template"]` 的结果仍等价于 `lv_template`
+- 并且服务端返回的 `data.channel` 始终是 `lv_template`
+
+这说明当前更稳的结论是：
+- 模板搜索接口本身已经在线打通
+- 它需要 replicate 体系请求头，而不是普通素材接口请求头
+- 当前没有证据支持“营销模板存在独立搜索 channel”
+- 更像是：模板搜索统一收敛到 `lv_template` 域，营销模板至少在这个搜索入口上没有表现出独立分支
+
+### 13.6 字幕模板：当前只抓到联想词，不是结果页
+
+接口：
+
+```text
+POST https://lv-api-sinfonlineb.ulikecam.com/artist/v1/effect/get_search_words
+```
+
+样本：
+- `search-zimumuban.saz`
+- `search-zimumuban.json`
+
+请求体：
+
+```json
+{
+  "app_id": 3704,
+  "effect_type": 48
+}
+```
+
+响应里只有这些内容：
+- `default_word`
+- `recommend_words`
+- `hot_words`
+- `grey_words`
+- `word_source`
+- `task_id`
+
+当前结论：
+- 这不是字幕模板结果接口
+- 这是搜索框推荐词 / 热词接口
+- 它和本地 `subtitle_template.py` 的实际素材抓取链路不是一回事
+
+目前能确认的是：
+- `effect_type=48` 仍然对应字幕模板域
+- 但现在已经有新的补抓样本证明：字幕模板真实搜索结果页实际走的是 `artist/v1/effect/search`
+
+### 13.7 对本地项目的落地建议
+
+如果后面把搜索能力接进当前项目，优先级建议是：
+
+1. 先接通 `artist/v1/effect/search`
+   - 一次就能覆盖音效、花字、贴纸、普通特效、转场、滤镜、花字模板、官方素材
+   - 这些都能大量复用现有 `effect_item_list` 解析与详情补全逻辑
+2. 再接 `search/songs`
+   - 与 `music.py` 高度一致
+3. 再接 `pc/search/templates`
+   - 需要补模板搜索专用分页与列表适配
+4. 最后补 `get_search_words`
+   - 这是前端辅助接口，不是主抓取链路
+
+补充说明：以上是当时的接入优先级建议。结合 2026-05-13 当前代码状态，这一层现在已经有了实际落地版本：
+
+- 新增 `jianying_crawler/search_service.py`
+- 新增 CLI 命令：
+  - `python -m jianying_crawler.cli search <关键词>`
+- 当前实际策略：
+  - 先实时调用剪映搜索接口
+  - 如果实时结果为空，再回退本地 SQLite / PostgreSQL
+  - 如果传 `--downloaded-only`，则直接查本地库
+- 当前已接入实时搜索的链路：
+  - `sound_effect`
+  - `music`
+  - `sticker`
+  - `flower`
+  - `effect`
+  - `task_effect`
+  - `transition`
+  - `filter`
+  - `text_template`
+  - `subtitle_template`
+  - `template`
+  - `marketing_template`
+  - `official_material`
+- 当前仍未接入实时搜索的：
+  - `material_pack`
+  - `get_search_words` 联想词接口未并入主搜索流程
+
+### 13.8 这批新增搜索抓包里，哪些还没有完全跑透
+
+当前仍然缺的点：
+
+- UI 名称到搜索协议分支的精确映射还没最终锁定
+  - 目前已经确认 `effect_type=7` 和 `effect_type=8` 两条人物 / 任务相关搜索分支都存在
+  - 但还需要最终确认 UI 上“人物特效”“任务特效”“普通特效”各自对应哪条
+- 营销模板独立搜索入口已经可以视为排除
+  - 最新 `yingxiao.saz` 真实搜索样本仍是 `pc/search/templates` + `channels=["lv_template"]`
+  - 在线回放 `lv_marketing_template` / `marketing_template` 仍为空
+  - 结合你的确认，可以收口为“营销模板没有其他独立搜索入口”
+
+### 13.9 在线回放实测结果（2026-05-13 新增）
+
+#### 13.9.1 搜索翻页：已在线验证 3 类
+
+我已经在线验证以下 3 类搜索都能正常翻到第 2 页，并且都会回填首屏 `search_id`：
+
+- 贴纸搜索
+  - `effect_type=2`
+  - 关键词：`春天`
+- 字幕模板搜索
+  - `effect_type=48`
+  - `scene=vimo_subtitle-template`
+  - 关键词：`手写`
+- 花字模板搜索
+  - `effect_type=6`
+  - `scene=vimo_text-template`
+  - 关键词：`划重点`
+
+当前结论：
+- `effect/search` 这套搜索翻页机制已经可以稳定视为：
+  - 首屏 `search_id=""`
+  - 翻页时带回首屏返回的 `search_id`
+  - 同时推进 `offset -> next_offset`
+
+#### 13.9.2 模板搜索：已在线打通
+
+我已经在线验证：
+
+- `pc/search/templates` 可以打通
+- 但要使用 replicate 体系请求头和签名
+- 不能直接套普通 `post_json` 的请求头
+
+当前结论：
+- 模板搜索不是“接口没跑通”
+- 而是“请求体系和普通素材搜索不同”
+
+#### 13.9.3 营销模板搜索：最新真实样本仍回到 `lv_template`
+
+最新这份 `E:/sucai/crawler_project/fiddler-v2rayn-10808/yingxiao.saz` 我已经拆开确认：
+
+- 请求接口：`pc/search/templates`
+- 关键词：`中秋`
+- 请求体里的 `channels=["lv_template"]`
+- 响应里的 `data.channel="lv_template"`
+- 同时返回 `template_list`、`next_cursor`、`search_id`、`filter_options`
+
+我另外在线尝试了这些 `channels`：
+
+- `["lv_template"]`
+- `["lv_marketing_template"]`
+- `["marketing_template"]`
+- `["lv_template","lv_marketing_template"]`
+
+当前结果：
+
+- 只有 `lv_template` 稳定返回结果
+- 后 3 种都不会跑出独立营销模板结果
+- 服务端返回的 `data.channel` 始终是 `lv_template`
+
+当前结论：
+- 营销模板搜索没有独立 search channel
+- 最新真实抓包进一步说明：营销入口直接复用 `lv_template`
+
+#### 13.9.4 人物 / 任务特效搜索：已确认 `effect_type=7 / 8` 双分支
+
+新增抓包已经把这条线补得很清楚：
+
+- `renwutexiao1.saz`：`effect_type=7`，第 1 页，`offset=0`
+- `renwutexiao5.saz`：`effect_type=7`，第 2 页，`offset=50`，回填同一个 `search_id`
+- `renwutexiao2.saz`：`effect_type=8`，第 1 页，`offset=0`
+- `renwutexiao4.saz`：`effect_type=8`，第 2 页，`offset=50`
+- `renwutexiao6.saz`：`effect_type=8`，第 3 页，`offset=100`
+
+我也在线回放确认了 `effect_type=8`：
+
+- 第 1 页返回 `effect_type=8`、`next_offset=50`
+- 第 2 页继续返回 `effect_type=8`、`next_offset=100`
+- 第 3 页继续返回 `effect_type=8`、`next_offset=150`
+- 三页都沿用同一个 `search_id`
+
+结合此前的手工对比：
+
+- `effect_type=7` + `scene=""` 和 `scene="face-prop"` 仍无差异
+- 强行给 `effect_type=7` 传 `category_list=[38389]` 仍是空结果
+
+当前结论：
+
+- 此前“只是展示口径差异”的结论已经不够用了
+- 至少在搜索协议层，`effect_type=7` 和 `effect_type=8` 两条人物 / 任务相关搜索分支都真实存在
+- 我又在线对照了面板和分类列表：
+  - `get_panel_info(panel="effects2")` 返回普通特效分类，如 `热门 / 基础 / 动感 / 氛围 / 多屏`
+  - `get_resources_by_category_id(panel="effects2", category_id=39654, category_key="rm")` 返回项全部是 `effect_type=7`
+  - `get_panel_info(panel="face-prop")` 返回人物向分类，如 `热门 / 情绪 / 身体 / 挡脸 / 头饰 / 手部 / 形象 / 环绕 / 表情`
+  - `get_resources_by_category_id(panel="face-prop", category_id=38389, category_key="hot")` 返回项全部是 `effect_type=8`
+- 因此当前已经可以基本锁定：
+  - 普通特效 UI 面板对应 `effects2` / `effect_type=7`
+  - 人物 / 任务特效 UI 面板对应 `face-prop` / `effect_type=8`
+  - 唯一还不能百分百静态证明的，是“人物特效”和“任务特效”这两个中文名是否只是同一面板在不同版本或不同入口下的命名差异

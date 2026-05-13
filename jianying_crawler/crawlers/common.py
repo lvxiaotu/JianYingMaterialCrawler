@@ -38,7 +38,7 @@ def iter_effect_items(data: dict[str, Any]) -> list[dict[str, Any]]:
 
 def iter_template_items(data: dict[str, Any]) -> list[dict[str, Any]]:
     payload = unwrap_response_payload(data)
-    for key in ["item_list", "templates"]:
+    for key in ["item_list", "templates", "template_list"]:
         items = payload.get(key)
         if isinstance(items, list):
             return items
@@ -73,7 +73,17 @@ def get_new_cursor(data: dict[str, Any]) -> str | None:
     payload = unwrap_response_payload(data)
     value = payload.get("new_cursor")
     if value is None:
+        value = payload.get("next_cursor")
+    if value is None:
         return None
+    return str(value)
+
+
+def get_search_id(data: dict[str, Any]) -> str:
+    payload = unwrap_response_payload(data)
+    value = payload.get("search_id")
+    if value is None:
+        return ""
     return str(value)
 
 

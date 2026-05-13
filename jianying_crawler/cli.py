@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sqlite3
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -9,6 +10,7 @@ from .crawlers import CRAWLER_MAP
 from .db import connect_postgres, init_db
 from .downloader import DownloadService
 from .repository import Repository
+from .search_service import SearchService
 from .service import build_context
 from .structure_report import build_structure_report
 
@@ -214,6 +216,50 @@ def cmd_cleanup_downloads() -> None:
     )
 
 
+def cmd_search(
+    query_text: str,
+    crawler_names: list[str] | None,
+    limit: int,
+    downloaded_only: bool,
+    json_output: bool,
+) -> None:
+    context = build_context()
+    service = SearchService(context)
+    payload = service.search_hybrid(
+        query_text=query_text,
+        crawler_names=crawler_names,
+        limit=limit,
+        downloaded_only=downloaded_only,
+    )
+    results = list(payload.get("results") or [])
+
+    if json_output:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+
+    if not results:
+        print(f"没有找到匹配素材：{query_text}")
+        return
+
+    print(
+        f"找到 {len(results)} 条候选素材：{query_text}"
+        f" | 模式={payload.get('search_mode') or ''}"
+        f" | 来源={payload.get('source') or ''}"
+    )
+    for index, item in enumerate(results, start=1):
+        downloaded = "已下载" if item.get("downloaded") else "未下载"
+        primary_path = str(item.get("primary_target_path") or "").strip()
+        location = f" | 路径={primary_path}" if primary_path else ""
+        print(
+            f"{index}. {item.get('title') or '(无标题)'}"
+            f" | 链路={item.get('crawler_name')}"
+            f" | 类型={item.get('material_type')}"
+            f" | effect_type={item.get('effect_type') or '-'}"
+            f" | resource_id={item.get('resource_id')}"
+            f" | {downloaded}{location}"
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="JianYing crawler CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -235,6 +281,13 @@ def main() -> None:
     download_parser.add_argument("--interval-seconds", dest="interval_seconds", type=float)
     download_parser.add_argument("--include-auxiliary", dest="include_auxiliary", action="store_true")
     download_parser.add_argument("--until-empty", dest="until_empty", action="store_true")
+
+    search_parser = subparsers.add_parser("search")
+    search_parser.add_argument("query_text")
+    search_parser.add_argument("--crawler", dest="crawler_names", action="append")
+    search_parser.add_argument("--limit", type=int, default=20)
+    search_parser.add_argument("--downloaded-only", dest="downloaded_only", action="store_true")
+    search_parser.add_argument("--json", dest="json_output", action="store_true")
 
     subparsers.add_parser("build-structure")
     subparsers.add_parser("cleanup-downloads")
@@ -262,6 +315,16 @@ def main() -> None:
             args.interval_seconds,
             args.include_auxiliary,
             args.until_empty,
+        )
+        return
+
+    if args.command == "search":
+        cmd_search(
+            args.query_text,
+            args.crawler_names,
+            args.limit,
+            args.downloaded_only,
+            args.json_output,
         )
         return
 
