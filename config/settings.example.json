@@ -1,0 +1,94 @@
+{
+  "storage_dir": "E:\\sucai",
+  "database_path": "E:\\sucai\\state\\crawler.db",
+  "database_url": "",
+  "raw_dir": "E:\\sucai\\raw",
+  "meta_dir": "E:\\sucai\\meta",
+  "downloads_dir": "E:\\sucai\\downloads",
+  "logs_dir": "E:\\sucai\\logs",
+  "state_dir": "E:\\sucai\\state",
+  "concurrency": 4,
+  "download_interval_seconds": 0,
+  "request_timeout_seconds": 30,
+  "retry_count": 2,
+  "retry_backoff_seconds": 2,
+  "default_query": {
+    "effect_sdk_version": "21.2.0",
+    "channel": "jianyingpro_0",
+    "aid": "3704",
+    "version_name": "10.5.0",
+    "language": "zh-Hans",
+    "region": "CN",
+    "device_platform": "windows",
+    "biz_id": "2",
+    "version_code_num": "656640",
+    "device_type": "x86_64",
+    "device_id": "7012563561417"
+  },
+  "default_headers": {
+    "Content-Type": "application/json",
+    "charset": "utf-8",
+    "appvr": "10.5.0",
+    "lan": "zh-Hans",
+    "loc": "CN",
+    "pf": "4",
+    "sign-ver": "1",
+    "tdid": "7012563561417",
+    "X-SS-DP": "3704",
+    "User-Agent": "Cronet/TTNetVersion:fc5bce71 2024-12-31 QuicVersion:55af8b7a 2024-11-18",
+    "Accept-Encoding": "gzip, deflate"
+  },
+  "auth": {
+    "cookie": "",
+    "sign": "",
+    "x_ss_stub": "",
+    "x_tt_trace_id": "",
+    "x_helios": "",
+    "x_medusa": "",
+    "business_sign_version": "v2"
+  },
+  "replicate_auth": {
+    "app_sdk_version": "167.0.0",
+    "appid": "3704",
+    "appvr": "10.5.0",
+    "channel_header": "jianyingpro_0",
+    "lan": "zh-hans",
+    "loc": "cn",
+    "pf": "4",
+    "sign_ver": "1",
+    "tdid": "7012563561417",
+    "x_ss_dp": "3704",
+    "user_agent": "Cronet/TTNetVersion:fc5bce71 2024-12-31 QuicVersion:55af8b7a 2024-11-18",
+    "accept_encoding": "gzip, deflate",
+    "x_neptune": "",
+    "cookie": "",
+    "device_time_by_endpoint": {
+      "replicate_get_collections_marketing": "",
+      "replicate_get_collections_template": "",
+      "replicate_get_collection_templates_marketing": "",
+      "replicate_get_collection_templates_template": "",
+      "replicate_multi_get_templates": ""
+    },
+    "x_tt_trace_id_by_endpoint": {
+      "replicate_get_collections_marketing": "",
+      "replicate_get_collections_template": "",
+      "replicate_get_collection_templates_marketing": "",
+      "replicate_get_collection_templates_template": "",
+      "replicate_multi_get_templates": ""
+    },
+    "sign_by_endpoint": {
+      "replicate_get_collections_marketing": "",
+      "replicate_get_collections_template": "",
+      "replicate_get_collection_templates_marketing": "",
+      "replicate_get_collection_templates_template": "",
+      "replicate_multi_get_templates": ""
+    }
+  },
+  "enabled_crawlers": {
+    "music": true,
+    "sound_effect": true,
+    "text_template": true,
+    "template": true,
+    "material_pack": true
+  }
+}

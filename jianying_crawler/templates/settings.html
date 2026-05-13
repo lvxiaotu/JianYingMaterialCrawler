@@ -1,0 +1,1877 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>剪映爬虫控制台</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #f3f7f1;
+      --panel: rgba(255, 255, 255, 0.90);
+      --panel-strong: rgba(255, 255, 255, 0.97);
+      --line: #d8e2d6;
+      --line-strong: #b9cab8;
+      --ink: #152014;
+      --muted: #677264;
+      --accent: #1d6a50;
+      --accent-2: #5ea67c;
+      --danger: #bd4236;
+      --shadow: 0 24px 70px rgba(24, 52, 31, 0.10);
+      --radius: 22px;
+      --radius-sm: 16px;
+      --mono: "Cascadia Code", Consolas, "Courier New", monospace;
+      --sans: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: var(--sans);
+      background:
+        radial-gradient(circle at top left, rgba(94, 166, 124, 0.16), transparent 30%),
+        radial-gradient(circle at top right, rgba(29, 106, 80, 0.12), transparent 28%),
+        linear-gradient(180deg, #eef5ef 0%, #f8fbf7 36%, #f1f6ef 100%);
+    }
+
+    .shell {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 24px 18px 40px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      backdrop-filter: blur(14px);
+      overflow: hidden;
+    }
+
+    .hero {
+      margin-bottom: 18px;
+    }
+
+    .hero-head {
+      padding: 24px 26px 18px;
+      background: linear-gradient(135deg, rgba(94, 166, 124, 0.12), rgba(255, 255, 255, 0.12));
+      border-bottom: 1px solid rgba(185, 202, 184, 0.45);
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      letter-spacing: 0.01em;
+    }
+
+    h1 {
+      font-size: 34px;
+      line-height: 1.1;
+    }
+
+    h2 {
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    h3 {
+      font-size: 15px;
+      line-height: 1.3;
+    }
+
+    .lead {
+      margin-top: 10px;
+      max-width: 920px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .message {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(29, 106, 80, 0.16);
+      background: rgba(29, 106, 80, 0.08);
+      color: var(--accent);
+      white-space: pre-wrap;
+      display: none;
+    }
+
+    .hero-meta {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .meta-card {
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+    }
+
+    .meta-label {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .meta-value {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.15;
+    }
+
+    .meta-sub {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+      word-break: break-all;
+    }
+
+    .tabs-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      margin-bottom: 18px;
+      padding-top: 4px;
+      background: linear-gradient(180deg, rgba(243, 247, 241, 0.96), rgba(243, 247, 241, 0.75), rgba(243, 247, 241, 0));
+      backdrop-filter: blur(12px);
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 18px;
+      border: 1px solid rgba(215, 226, 214, 0.9);
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: 0 14px 40px rgba(24, 52, 31, 0.06);
+    }
+
+    .tab-button {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      box-shadow: none;
+    }
+
+    .tab-button.active {
+      background: linear-gradient(135deg, var(--accent-2), var(--accent));
+      color: white;
+      box-shadow: 0 14px 28px rgba(29, 106, 80, 0.18);
+    }
+
+    .tab-panel {
+      display: none;
+      gap: 18px;
+    }
+
+    .tab-panel.active {
+      display: grid;
+    }
+
+    .section-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .section-grid-3 {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 18px;
+    }
+
+    .panel-header {
+      padding: 20px 22px 12px;
+      border-bottom: 1px solid rgba(185, 202, 184, 0.45);
+      background: linear-gradient(135deg, rgba(94, 166, 124, 0.08), rgba(255, 255, 255, 0.10));
+    }
+
+    .panel-body {
+      padding: 18px 22px 22px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .summary-card {
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #fbfdfb;
+    }
+
+    .summary-card .meta-value {
+      font-size: 24px;
+    }
+
+    .commands {
+      display: grid;
+      gap: 12px;
+    }
+
+    .commands.compact {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .command-card {
+      border: 1px solid rgba(29, 106, 80, 0.14);
+      background:
+        linear-gradient(135deg, rgba(94, 166, 124, 0.10), rgba(255, 255, 255, 0.92)),
+        rgba(255, 255, 255, 0.92);
+      color: var(--ink);
+      border-radius: 20px;
+      padding: 16px;
+      cursor: pointer;
+      transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .command-card:hover {
+      transform: translateY(-1px);
+      border-color: rgba(29, 106, 80, 0.30);
+      box-shadow: 0 14px 28px rgba(29, 106, 80, 0.08);
+    }
+
+    .command-card.compact {
+      padding: 14px;
+    }
+
+    .command-card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 8px;
+    }
+
+    .command-card-title {
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .command-card-desc {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+      margin-bottom: 12px;
+    }
+
+    .command-assemble {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .command-segment {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 7px 11px;
+      border-radius: 12px;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      border: 1px solid rgba(16, 32, 25, 0.08);
+      background: rgba(255, 255, 255, 0.88);
+      word-break: break-word;
+    }
+
+    .command-segment.prefix {
+      background: #102019;
+      color: #eaf9f0;
+      border-color: rgba(16, 32, 25, 0.20);
+    }
+
+    .command-segment.action {
+      background: rgba(29, 106, 80, 0.12);
+      color: var(--accent);
+      border-color: rgba(29, 106, 80, 0.18);
+    }
+
+    .command-segment.option {
+      background: rgba(94, 166, 124, 0.10);
+      color: #1f5c46;
+      border-color: rgba(94, 166, 124, 0.18);
+    }
+
+    .command-segment.arg {
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--ink);
+    }
+
+    .command-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .command-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      background: rgba(29, 106, 80, 0.08);
+      color: var(--accent);
+    }
+
+    .command-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .command-preview {
+      border: 1px solid rgba(29, 106, 80, 0.14);
+      background:
+        linear-gradient(135deg, rgba(94, 166, 124, 0.10), rgba(255, 255, 255, 0.92)),
+        rgba(255, 255, 255, 0.92);
+      border-radius: 20px;
+      padding: 18px;
+      min-height: 180px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line-strong);
+      border-radius: 16px;
+      padding: 13px 14px;
+      background: #fcfefd;
+      color: var(--ink);
+      outline: none;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    textarea {
+      min-height: 210px;
+      resize: vertical;
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+
+    .command-input {
+      min-height: 110px;
+    }
+
+    .actions {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    button,
+    .secondary-button {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      background: linear-gradient(135deg, var(--accent-2), var(--accent));
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 14px 28px rgba(29, 106, 80, 0.16);
+    }
+
+    .secondary-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      color: var(--ink);
+      border: 1px solid var(--line-strong);
+      box-shadow: none;
+      text-decoration: none;
+    }
+
+    .foot-note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .job-list {
+      display: grid;
+      gap: 12px;
+      max-height: 560px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .job-item {
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.88);
+      cursor: pointer;
+      transition: transform 120ms ease, border-color 120ms ease;
+    }
+
+    .job-item:hover {
+      transform: translateY(-1px);
+      border-color: rgba(29, 106, 80, 0.26);
+    }
+
+    .job-item.active {
+      border-color: rgba(29, 106, 80, 0.42);
+      box-shadow: inset 0 0 0 1px rgba(29, 106, 80, 0.12);
+    }
+
+    .job-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .job-command {
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      word-break: break-word;
+    }
+
+    .job-meta {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .job-output {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #102019;
+      color: #e6f5ec;
+      padding: 16px;
+      min-height: 520px;
+      max-height: 700px;
+      overflow: auto;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    .status-running {
+      background: rgba(29, 106, 80, 0.12);
+      color: var(--accent);
+    }
+
+    .status-done {
+      background: rgba(56, 136, 80, 0.12);
+      color: #2e7c42;
+    }
+
+    .status-failed {
+      background: rgba(189, 66, 54, 0.12);
+      color: var(--danger);
+    }
+
+    .status-queued {
+      background: rgba(103, 114, 100, 0.14);
+      color: #556153;
+    }
+
+    .crawler-table {
+      display: grid;
+      gap: 14px;
+    }
+
+    .crawler-card {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.92);
+    }
+
+    .crawler-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: start;
+      margin-bottom: 12px;
+    }
+
+    .crawler-name {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .crawler-stats {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat {
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(216, 226, 214, 0.86);
+      background: #f9fcf9;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 19px;
+      font-weight: 700;
+    }
+
+    .subgrid {
+      display: grid;
+      grid-template-columns: 1.06fr 0.94fr;
+      gap: 12px;
+    }
+
+    .mini-block {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      background: #fcfefd;
+    }
+
+    .mini-list {
+      display: grid;
+      gap: 8px;
+      max-height: 250px;
+      overflow: auto;
+      margin-top: 10px;
+    }
+
+    .mini-row {
+      display: grid;
+      grid-template-columns: 1.15fr repeat(3, 70px);
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(29, 106, 80, 0.04);
+    }
+
+    .mini-row strong {
+      font-family: var(--mono);
+      font-size: 11px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .state-row {
+      padding: 9px 10px;
+      border-radius: 12px;
+      background: rgba(103, 114, 100, 0.06);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .request-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+
+    .request-toolbar .field {
+      min-width: 180px;
+      flex: 1 1 180px;
+    }
+
+    select {
+      width: 100%;
+      border: 1px solid var(--line-strong);
+      border-radius: 16px;
+      padding: 13px 14px;
+      background: #fcfefd;
+      color: var(--ink);
+      outline: none;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .request-stream {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #102019;
+      color: #e6f5ec;
+      min-height: 520px;
+      max-height: 760px;
+      overflow: auto;
+    }
+
+    .request-entry {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(230, 245, 236, 0.08);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .request-entry:last-child {
+      border-bottom: 0;
+    }
+
+    .request-topline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .request-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      background: rgba(94, 166, 124, 0.18);
+      color: #d6f5e2;
+    }
+
+    .request-badge.download {
+      background: rgba(41, 117, 170, 0.22);
+      color: #d8eeff;
+    }
+
+    .request-badge.failed {
+      background: rgba(189, 66, 54, 0.28);
+      color: #ffdeda;
+    }
+
+    .request-meta {
+      color: #b8d7c4;
+      word-break: break-word;
+    }
+
+    .request-url {
+      color: #f0fff4;
+      word-break: break-all;
+    }
+
+    code {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: rgba(16, 32, 25, 0.06);
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    @media (max-width: 1240px) {
+      .hero-meta,
+      .summary-grid,
+      .section-grid-2,
+      .section-grid-3,
+      .subgrid {
+        grid-template-columns: 1fr;
+      }
+
+      .command-selector-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .commands.compact {
+        grid-template-columns: 1fr;
+      }
+
+      .crawler-stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 740px) {
+      .shell {
+        padding: 16px 12px 28px;
+      }
+
+      .hero-head,
+      .panel-header,
+      .panel-body {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      .hero-meta,
+      .summary-grid,
+      .crawler-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .mini-row {
+        grid-template-columns: 1fr;
+      }
+
+      .job-output {
+        min-height: 360px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="panel hero">
+      <div class="hero-head">
+        <h1>剪映爬虫控制台</h1>
+        <div class="lead">
+          这个页面按功能分栏管理，不再把所有内容堆成一整页。你可以在不同分栏里分别处理总览、命令执行、任务输出、链路状态和配置认证。
+        </div>
+        <div id="message" class="message"></div>
+        <div class="hero-meta">
+          <div class="meta-card">
+            <div class="meta-label">配置文件</div>
+            <div class="meta-value" id="configPathLabel">settings.json</div>
+            <div class="meta-sub" id="configPath"></div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-label">最后刷新</div>
+            <div class="meta-value" id="generatedAt">-</div>
+            <div class="meta-sub">页面每 4 秒自动刷新状态</div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-label">启用链路</div>
+            <div class="meta-value" id="enabledCrawlerCount">0</div>
+            <div class="meta-sub">总链路 <span id="totalCrawlerCount">0</span> 条</div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-label">待下载</div>
+            <div class="meta-value" id="totalPending">0</div>
+            <div class="meta-sub">全链路 pending 汇总</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tabs-wrap">
+      <div class="tabs">
+        <button class="tab-button active" type="button" data-tab="overview">总览</button>
+        <button class="tab-button" type="button" data-tab="commands">命令执行</button>
+        <button class="tab-button" type="button" data-tab="jobs">任务输出</button>
+        <button class="tab-button" type="button" data-tab="requests">实时请求</button>
+        <button class="tab-button" type="button" data-tab="crawlers">链路状态</button>
+        <button class="tab-button" type="button" data-tab="config">配置认证</button>
+      </div>
+    </section>
+
+    <section id="tab-overview" class="tab-panel active">
+      <div class="section-grid-2">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>全局统计</h2>
+          </div>
+          <div class="panel-body">
+            <div class="summary-grid">
+              <div class="summary-card">
+                <div class="meta-label">Items</div>
+                <div class="meta-value" id="totalItems">0</div>
+                <div class="meta-sub">已入库资源总数</div>
+              </div>
+              <div class="summary-card">
+                <div class="meta-label">Downloads</div>
+                <div class="meta-value" id="totalDownloads">0</div>
+                <div class="meta-sub">下载记录总数</div>
+              </div>
+              <div class="summary-card">
+                <div class="meta-label">Done</div>
+                <div class="meta-value" id="totalDone">0</div>
+                <div class="meta-sub">已完成下载</div>
+              </div>
+              <div class="summary-card">
+                <div class="meta-label">Failed</div>
+                <div class="meta-value" id="totalFailed">0</div>
+                <div class="meta-sub">下载失败记录</div>
+              </div>
+              <div class="summary-card">
+                <div class="meta-label">当前任务数</div>
+                <div class="meta-value" id="jobCount">0</div>
+                <div class="meta-sub">后台任务列表条数</div>
+              </div>
+              <div class="summary-card">
+                <div class="meta-label">命令预设</div>
+                <div class="meta-value" id="commandCount">0</div>
+                <div class="meta-sub">从文档自动提取</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2>快捷入口</h2>
+          </div>
+          <div class="panel-body">
+            <div class="stack">
+              <div class="muted">
+                这里放最常用的几类入口。点一下会自动切到对应分栏，或者把命令填入执行框。
+              </div>
+              <div class="commands compact" id="quickCommandCards"></div>
+              <div class="actions">
+                <button type="button" id="goCommandsButton">去命令执行</button>
+                <button type="button" class="secondary-button" id="goCrawlersButton">看链路状态</button>
+                <button type="button" class="secondary-button" id="goConfigButton">改配置认证</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-commands" class="tab-panel">
+      <div class="stack">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>命令中心</h2>
+          </div>
+          <div class="panel-body">
+            <div class="stack">
+              <div>
+                <h3>文档提取的命令预设</h3>
+                <div class="muted" style="margin: 8px 0 12px;">先选分类，再选链路或命令，再选参数预设。这样更容易找到 `--limit 50`、`--until-empty` 之类的参数。</div>
+                <div class="command-selector-grid">
+                  <div>
+                    <label for="commandCategorySelect">命令分类</label>
+                    <select id="commandCategorySelect"></select>
+                  </div>
+                  <div>
+                    <label for="commandBaseSelect">链路 / 命令</label>
+                    <select id="commandBaseSelect"></select>
+                  </div>
+                </div>
+                <div class="command-selector-grid">
+                  <div>
+                    <label for="commandPresetSelect">参数预设</label>
+                    <select id="commandPresetSelect"></select>
+                  </div>
+                  <div>
+                    <label for="commandPresetHint">参数说明</label>
+                    <input id="commandPresetHint" type="text" readonly>
+                  </div>
+                </div>
+                <div id="commandPreview" class="command-preview"></div>
+              </div>
+              <div>
+                <label for="commandInput">手动命令</label>
+                <textarea id="commandInput" class="command-input" spellcheck="false"></textarea>
+                <div class="actions">
+                  <button id="runCommandButton" type="button">执行命令</button>
+                  <button id="refreshButton" class="secondary-button" type="button">刷新状态</button>
+                </div>
+                <div class="foot-note">
+                  这里只允许执行 <code>python -m jianying_crawler.cli ...</code>，避免误跑别的命令。
+                </div>
+              </div>
+              <div class="mini-block">
+                <h3>并发抓取</h3>
+                <div class="muted" style="margin: 8px 0 12px;">
+                  这里专门用于同时启动多条 crawl 链路。适合先把多个链路的分类、列表和详情并发录入数据库。
+                </div>
+                <div class="command-selector-grid">
+                  <div>
+                    <label for="parallelCrawlerSelect">抓取链路</label>
+                    <select id="parallelCrawlerSelect" multiple size="8"></select>
+                  </div>
+                  <div>
+                    <label for="parallelCountInput">并发数</label>
+                    <input id="parallelCountInput" type="text" value="3" placeholder="例如 3">
+                    <div class="foot-note">
+                      并发数表示最多同时运行多少条链路。建议先从 <code>2</code> 或 <code>3</code> 开始。
+                    </div>
+                  </div>
+                </div>
+                <div class="actions">
+                  <button id="runParallelCrawlButton" type="button">开始并发抓取</button>
+                  <button id="fillParallelCommandButton" class="secondary-button" type="button">填入命令框</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2>最近任务</h2>
+          </div>
+          <div class="panel-body">
+            <div id="jobList" class="job-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-jobs" class="tab-panel">
+      <div class="section-grid-3">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>任务输出详情</h2>
+          </div>
+          <div class="panel-body">
+            <div id="jobDetailMeta" class="muted" style="margin-bottom: 12px;">点击任务后查看输出。</div>
+            <div class="actions" style="margin-top: 0; margin-bottom: 12px;">
+              <button id="stopSelectedJobButton" type="button">停止当前任务</button>
+              <button id="stopAllJobsButton" class="secondary-button" type="button">停止全部任务</button>
+            </div>
+            <div id="jobOutput" class="job-output">还没有选中任务。</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2>任务列表</h2>
+          </div>
+          <div class="panel-body">
+            <div id="jobListMirror" class="job-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-requests" class="tab-panel">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>实时请求流</h2>
+        </div>
+        <div class="panel-body">
+          <div class="request-toolbar">
+            <div class="field">
+              <label for="requestScope">Scope</label>
+              <select id="requestScope">
+                <option value="all">all</option>
+                <option value="crawl">crawl</option>
+                <option value="download">download</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="requestCrawler">Crawler</label>
+              <input id="requestCrawler" type="text" placeholder="_all / sound_effect / music">
+            </div>
+            <div class="field">
+              <label for="requestLimit">Limit</label>
+              <input id="requestLimit" type="text" value="120">
+            </div>
+            <div class="actions" style="margin-top: 22px;">
+              <button type="button" id="refreshRequestsButton">刷新请求</button>
+            </div>
+          </div>
+          <div class="muted" style="margin-bottom: 12px;">
+            这里会按 2 秒自动刷新，可以直接看到 crawl API 请求和 download 资源请求的流式记录。
+          </div>
+          <div id="requestStream" class="request-stream"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-crawlers" class="tab-panel">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>链路状态</h2>
+        </div>
+        <div class="panel-body">
+          <div id="crawlerTable" class="crawler-table"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-config" class="tab-panel">
+      <div class="section-grid-2">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>快速认证修改</h2>
+          </div>
+          <div class="panel-body">
+            <form method="post" action="/save-quick-auth">
+              <div class="stack">
+                <div>
+                  <label for="authCookie">auth.cookie</label>
+                  <input id="authCookie" name="auth_cookie" type="text">
+                </div>
+                <div>
+                  <label for="replicateCookie">replicate_auth.cookie</label>
+                  <input id="replicateCookie" name="replicate_cookie" type="text">
+                </div>
+                <div>
+                  <label for="authSign">auth.sign</label>
+                  <input id="authSign" name="auth_sign" type="text">
+                </div>
+                <div>
+                  <label for="authXssStub">auth.x_ss_stub</label>
+                  <input id="authXssStub" name="auth_x_ss_stub" type="text">
+                </div>
+                <div class="actions">
+                  <button type="submit">保存快速认证配置</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2>完整配置 JSON</h2>
+          </div>
+          <div class="panel-body">
+            <form method="post" action="/save-config">
+              <label for="configJson">config/settings.json</label>
+              <textarea id="configJson" name="config_json" spellcheck="false"></textarea>
+              <div class="actions">
+                <button type="submit">保存完整配置</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const payload = {{page_payload_json}};
+    let state = payload;
+    let selectedJobId = null;
+    let activeTab = "overview";
+    let selectedCommandCategory = "";
+    let selectedCommandBase = "";
+    let selectedCommandValue = "";
+    let statusRefreshInFlight = false;
+    let requestLogRefreshInFlight = false;
+    let requestLogState = {
+      logs: Array.isArray(payload.request_logs) ? payload.request_logs : [],
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function statusClass(status) {
+      if (status === "running") return "status-running";
+      if (status === "done") return "status-done";
+      if (status === "stopped") return "status-failed";
+      if (status === "failed") return "status-failed";
+      return "status-queued";
+    }
+
+    function statusText(status) {
+      if (status === "running") return "RUNNING";
+      if (status === "done") return "DONE";
+      if (status === "stopped") return "STOPPED";
+      if (status === "failed") return "FAILED";
+      return "QUEUED";
+    }
+
+    function setMessage(message) {
+      const box = document.getElementById("message");
+      if (!message) {
+        box.style.display = "none";
+        box.textContent = "";
+        return;
+      }
+      box.style.display = "block";
+      box.textContent = message;
+    }
+
+    function switchTab(tabName) {
+      activeTab = tabName;
+      document.querySelectorAll(".tab-button").forEach((button) => {
+        button.classList.toggle("active", button.getAttribute("data-tab") === tabName);
+      });
+      document.querySelectorAll(".tab-panel").forEach((panel) => {
+        panel.classList.toggle("active", panel.id === `tab-${tabName}`);
+      });
+    }
+
+    function renderOverview() {
+      const totals = state.summary?.totals || {};
+      document.getElementById("configPath").textContent = state.config_path || "";
+      document.getElementById("generatedAt").textContent = state.generated_at || "-";
+      document.getElementById("enabledCrawlerCount").textContent = totals.enabled_count ?? 0;
+      document.getElementById("totalCrawlerCount").textContent = totals.crawler_count ?? 0;
+      document.getElementById("totalItems").textContent = totals.items_total ?? 0;
+      document.getElementById("totalDownloads").textContent = totals.downloads_total ?? 0;
+      document.getElementById("totalPending").textContent = totals.pending_count ?? 0;
+      document.getElementById("totalDone").textContent = totals.done_count ?? 0;
+      document.getElementById("totalFailed").textContent = totals.failed_count ?? 0;
+      document.getElementById("jobCount").textContent = (state.jobs || []).length;
+      document.getElementById("commandCount").textContent = getCommandCards().length;
+    }
+
+    function humanizeCrawlerName(name) {
+      const mapping = {
+        effect: "普通特效",
+        filter: "滤镜",
+        flower: "花字",
+        marketing_template: "营销模板",
+        material_pack: "素材包",
+        music: "音乐",
+        official_material: "官方素材",
+        sound_effect: "音效",
+        sticker: "贴纸",
+        subtitle_template: "字幕模板",
+        task_effect: "任务特效",
+        template: "模板库",
+        text_template: "文字模板",
+        transition: "转场",
+      };
+      return mapping[name] || name || "未知链路";
+    }
+
+    function buildFallbackCommandCards(commands) {
+      return (commands || []).map((command) => {
+        const normalized = String(command || "").trim().replace(/\s+/g, " ");
+        const tokens = normalized.split(" ").filter(Boolean);
+        const prefix = tokens.slice(0, 3);
+        const args = tokens.slice(3);
+        const action = args[0] || "";
+        let crawlerName = "";
+        for (let index = 1; index < args.length; index += 1) {
+          if (!args[index].startsWith("--")) {
+            crawlerName = args[index];
+            break;
+          }
+        }
+
+        let title = "CLI 命令";
+        let summary = "执行一条 JianYing crawler CLI 命令。";
+        const tags = [];
+
+        if (action === "init-db") {
+          title = "初始化数据库";
+          summary = "创建或初始化当前配置对应的数据库表结构。";
+          tags.push("数据库", "初始化");
+        } else if (action === "migrate-sqlite") {
+          title = "迁移 SQLite 到 PostgreSQL";
+          summary = "把现有 SQLite 数据迁移到 PostgreSQL。";
+          tags.push("数据库", "迁移", "PostgreSQL");
+        } else if (action === "build-structure") {
+          title = "生成资源结构报告";
+          summary = "整理当前下载目录结构，输出资源分级结构报告。";
+          tags.push("结构", "报告");
+        } else if (action === "cleanup-downloads") {
+          title = "清理重复下载记录";
+          summary = "清理数据库中的重复下载记录，不删除磁盘文件。";
+          tags.push("下载", "清理");
+        } else if (action === "crawl") {
+          const name = humanizeCrawlerName(crawlerName);
+          title = `抓取 ${name}`;
+          summary = `抓取 ${name} 链路的分类、列表和详情，并把待下载资源写入数据库。`;
+          tags.push("抓取", name);
+        } else if (action === "download") {
+          const name = humanizeCrawlerName(crawlerName);
+          title = `下载 ${name}`;
+          summary = `下载 ${name} 链路中已经录入 pending 的资源。`;
+          if (args.includes("--until-empty")) {
+            summary = `持续下载 ${name} 链路资源，直到当前链路没有待下载记录。`;
+            tags.push("跑空队列");
+          }
+          if (args.includes("--include-auxiliary")) {
+            summary += " 包含模板依赖或辅助资源。";
+            tags.push("含依赖");
+          }
+          tags.unshift("下载", name);
+        }
+
+        const segments = [];
+        for (let index = 0; index < args.length; index += 1) {
+          const token = args[index];
+          if (token.startsWith("--")) {
+            let text = token;
+            if (index + 1 < args.length && !args[index + 1].startsWith("--")) {
+              text = `${token} ${args[index + 1]}`;
+              index += 1;
+            }
+            segments.push({ kind: "option", text });
+          } else {
+            segments.push({
+              kind: token === action ? "action" : "arg",
+              text: token,
+            });
+          }
+        }
+
+        return {
+          command: normalized,
+          title,
+          summary,
+          option_label: buildFallbackOptionLabel(title, args),
+          prefix,
+          segments,
+          tags,
+          action,
+          crawler_name: crawlerName,
+          category: action === "crawl" ? "crawl" : action === "download" ? "download" : action === "init-db" || action === "migrate-sqlite" ? "database" : action === "build-structure" ? "report" : action === "cleanup-downloads" ? "maintenance" : "other",
+          category_label: action === "crawl" ? "抓取" : action === "download" ? "下载" : action === "init-db" || action === "migrate-sqlite" ? "数据库" : action === "build-structure" ? "结构与报告" : action === "cleanup-downloads" ? "清理与维护" : "其他命令",
+        };
+      });
+    }
+
+    function buildFallbackOptionLabel(title, args) {
+      const highlights = [];
+      for (let index = 0; index < args.length; index += 1) {
+        const token = args[index];
+        if (["--limit", "--interval-seconds", "--url-kind", "--resource-id"].includes(token)) {
+          if (index + 1 < args.length) {
+            highlights.push(`${token} ${args[index + 1]}`);
+            index += 1;
+          }
+        } else if (["--until-empty", "--include-auxiliary"].includes(token)) {
+          highlights.push(token);
+        }
+      }
+      return highlights.length ? `${title} | ${highlights.join(" ")}` : title;
+    }
+
+    function getCommandCards() {
+      const cards = state.command_cards;
+      if (Array.isArray(cards) && cards.length) {
+        return cards;
+      }
+      return buildFallbackCommandCards(state.commands || []);
+    }
+
+    function getCommandCategories(cards) {
+      const mapping = new Map();
+      cards.forEach((card) => {
+        const key = card.category || "other";
+        const label = card.category_label || "其他命令";
+        if (!mapping.has(key)) {
+          mapping.set(key, { key, label });
+        }
+      });
+      return Array.from(mapping.values());
+    }
+
+    function getCommandBaseKey(card) {
+      if (!card) return "";
+      if (card.action === "download" || card.action === "crawl") {
+        return `${card.action}:${card.crawler_name || ""}`;
+      }
+      return `${card.action || "other"}:${card.title || card.command || ""}`;
+    }
+
+    function getCommandBaseLabel(card) {
+      if (!card) return "";
+      if (card.action === "download" || card.action === "crawl") {
+        return humanizeCrawlerName(card.crawler_name || "") || card.title || "";
+      }
+      return card.title || card.command || "";
+    }
+
+    function getCommandPresetLabel(card) {
+      if (!card) return "";
+      if (card.action === "download") {
+        const text = String(card.option_label || "");
+        const parts = text.split(" | ");
+        return parts.length > 1 ? parts.slice(1).join(" | ") : "默认参数";
+      }
+      if (card.action === "crawl") {
+        return "抓取命令当前无附加参数，可切到下载分类查看 --limit / --until-empty 等参数";
+      }
+      return card.option_label || card.title || card.command || "";
+    }
+
+    function buildCommandCardsHtml(cards, compact = false) {
+      if (!cards.length) {
+        return `<div class="muted">还没有可展示的命令。</div>`;
+      }
+      return cards.map((card) => {
+        const prefix = Array.isArray(card.prefix) ? card.prefix.join(" ") : "python -m jianying_crawler.cli";
+        const segments = Array.isArray(card.segments) ? card.segments : [];
+        const tags = Array.isArray(card.tags) ? card.tags : [];
+        return `
+          <button type="button" class="command-card ${compact ? "compact" : ""}" data-command="${escapeHtml(card.command || "")}">
+            <div class="command-card-top">
+              <div class="command-card-title">${escapeHtml(card.title || "CLI 命令")}</div>
+            </div>
+            <div class="command-card-desc">${escapeHtml(card.summary || "")}</div>
+            <div class="command-assemble">
+              <span class="command-segment prefix">${escapeHtml(prefix)}</span>
+              ${segments.map((segment) => `
+                <span class="command-segment ${escapeHtml(segment.kind || "arg")}">${escapeHtml(segment.text || "")}</span>
+              `).join("")}
+            </div>
+            <div class="command-tags">
+              ${tags.map((tag) => `<span class="command-tag">${escapeHtml(tag)}</span>`).join("")}
+            </div>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function attachCommandCards(containerId, cards, compact = false) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = buildCommandCardsHtml(cards, compact);
+      container.querySelectorAll(".command-card").forEach((button) => {
+        button.addEventListener("click", () => {
+          document.getElementById("commandInput").value = button.getAttribute("data-command") || "";
+          switchTab("commands");
+        });
+      });
+    }
+
+    function renderCommandPreview(card) {
+      const container = document.getElementById("commandPreview");
+      if (!container) return;
+      if (!card) {
+        container.innerHTML = `<div class="muted">还没有可展示的命令。</div>`;
+        return;
+      }
+      container.innerHTML = buildCommandCardsHtml([card], false);
+      const button = container.querySelector(".command-card");
+      if (button) {
+        button.addEventListener("click", () => {
+          document.getElementById("commandInput").value = card.command || "";
+        });
+      }
+    }
+
+    function renderCommands() {
+      const commandCards = getCommandCards();
+      const quickCards = commandCards.slice(0, 4);
+      attachCommandCards("quickCommandCards", quickCards, true);
+
+      const categorySelect = document.getElementById("commandCategorySelect");
+      const baseSelect = document.getElementById("commandBaseSelect");
+      const presetSelect = document.getElementById("commandPresetSelect");
+      const presetHint = document.getElementById("commandPresetHint");
+      const categories = getCommandCategories(commandCards);
+
+      if (!selectedCommandCategory || !categories.find((item) => item.key === selectedCommandCategory)) {
+        selectedCommandCategory = categories[0]?.key || "";
+      }
+
+      categorySelect.innerHTML = categories.map((item) =>
+        `<option value="${escapeHtml(item.key)}">${escapeHtml(item.label)}</option>`
+      ).join("");
+      categorySelect.value = selectedCommandCategory;
+
+      const categoryCards = commandCards.filter((card) => (card.category || "other") === selectedCommandCategory);
+      const baseMap = new Map();
+      categoryCards.forEach((card) => {
+        const key = getCommandBaseKey(card);
+        if (!baseMap.has(key)) {
+          baseMap.set(key, { key, label: getCommandBaseLabel(card) });
+        }
+      });
+      const bases = Array.from(baseMap.values());
+      if (!selectedCommandBase || !bases.find((item) => item.key === selectedCommandBase)) {
+        selectedCommandBase = bases[0]?.key || "";
+      }
+
+      baseSelect.innerHTML = bases.map((item) =>
+        `<option value="${escapeHtml(item.key)}">${escapeHtml(item.label)}</option>`
+      ).join("");
+      baseSelect.value = selectedCommandBase;
+
+      const filteredCards = categoryCards.filter((card) => getCommandBaseKey(card) === selectedCommandBase);
+      if (!selectedCommandValue || !filteredCards.find((card) => card.command === selectedCommandValue)) {
+        selectedCommandValue = filteredCards[0]?.command || "";
+      }
+
+      presetSelect.innerHTML = filteredCards.map((card) =>
+        `<option value="${escapeHtml(card.command || "")}">${escapeHtml(getCommandPresetLabel(card))}</option>`
+      ).join("");
+      presetSelect.value = selectedCommandValue;
+
+      const selectedCard = filteredCards.find((card) => card.command === selectedCommandValue) || filteredCards[0] || null;
+      if (selectedCard) {
+        document.getElementById("commandInput").value = selectedCard.command || "";
+      }
+      if (presetHint) {
+        presetHint.value = selectedCard ? getCommandPresetLabel(selectedCard) : "";
+      }
+      renderCommandPreview(selectedCard);
+    }
+
+    function renderQuickAuth() {
+      const auth = state.quick_auth || {};
+      document.getElementById("authCookie").value = auth.auth_cookie || "";
+      document.getElementById("replicateCookie").value = auth.replicate_cookie || "";
+      document.getElementById("authSign").value = auth.auth_sign || "";
+      document.getElementById("authXssStub").value = auth.auth_x_ss_stub || "";
+      document.getElementById("configJson").value = state.config_json || "";
+    }
+
+    function renderParallelCrawlerOptions() {
+      const select = document.getElementById("parallelCrawlerSelect");
+      if (!select) return;
+      const crawlers = Array.isArray(state.available_crawlers) ? state.available_crawlers : [];
+      const previousValues = new Set(Array.from(select.selectedOptions || []).map((option) => option.value));
+      select.innerHTML = crawlers.map((crawler) => {
+        const enabledText = crawler.enabled ? "已启用" : "未启用";
+        return `<option value="${escapeHtml(crawler.name || "")}">${escapeHtml(crawler.label || crawler.name || "")} | ${escapeHtml(enabledText)}</option>`;
+      }).join("");
+      Array.from(select.options).forEach((option) => {
+        if (previousValues.has(option.value)) {
+          option.selected = true;
+        }
+      });
+    }
+
+    function buildParallelCrawlCommand() {
+      const select = document.getElementById("parallelCrawlerSelect");
+      const countInput = document.getElementById("parallelCountInput");
+      const crawlerNames = Array.from(select?.selectedOptions || []).map((option) => option.value).filter(Boolean);
+      if (!crawlerNames.length) {
+        throw new Error("请先至少选择一条抓取链路。");
+      }
+      const requestedParallel = parseInt((countInput?.value || "1").trim(), 10);
+      const parallel = Number.isFinite(requestedParallel) && requestedParallel > 0
+        ? Math.min(requestedParallel, crawlerNames.length)
+        : 1;
+      return `python -m jianying_crawler.cli crawl ${crawlerNames.join(" ")} --parallel ${parallel}`;
+    }
+
+    function buildJobsHtml(jobs) {
+      return jobs.length ? jobs.map((job) => `
+        <div class="job-item ${job.job_id === selectedJobId ? "active" : ""}" data-job-id="${escapeHtml(job.job_id)}">
+          <div class="job-top">
+            <span class="status-pill ${statusClass(job.status)}">${statusText(job.status)}</span>
+            <span class="job-meta">${escapeHtml(job.created_at || "")}</span>
+          </div>
+          <div class="job-command">${escapeHtml(job.command || "")}</div>
+          <div class="job-meta" style="margin-top: 8px;">
+            启动: ${escapeHtml(job.started_at || "-")}<br>
+            结束: ${escapeHtml(job.finished_at || "-")}<br>
+            返回码: ${escapeHtml(job.return_code ?? "-")}
+          </div>
+        </div>
+      `).join("") : `<div class="muted">还没有执行过命令。</div>`;
+    }
+
+    function bindJobClicks(container) {
+      container.querySelectorAll(".job-item").forEach((item) => {
+        item.addEventListener("click", () => {
+          selectedJobId = item.getAttribute("data-job-id");
+          renderJobs();
+          renderSelectedJob();
+        });
+      });
+    }
+
+    function renderJobs() {
+      const jobs = state.jobs || [];
+      if (!selectedJobId && jobs.length) {
+        selectedJobId = jobs[0].job_id;
+      }
+      if (selectedJobId && !jobs.find((job) => job.job_id === selectedJobId)) {
+        selectedJobId = jobs.length ? jobs[0].job_id : null;
+      }
+
+      const list = document.getElementById("jobList");
+      const mirror = document.getElementById("jobListMirror");
+      list.innerHTML = buildJobsHtml(jobs);
+      mirror.innerHTML = buildJobsHtml(jobs);
+      bindJobClicks(list);
+      bindJobClicks(mirror);
+      renderSelectedJob();
+    }
+
+    function renderSelectedJob() {
+      const jobs = state.jobs || [];
+      const job = jobs.find((item) => item.job_id === selectedJobId);
+      const output = document.getElementById("jobOutput");
+      const meta = document.getElementById("jobDetailMeta");
+      if (!job) {
+        meta.textContent = "点击任务后查看输出。";
+        output.textContent = "还没有选中任务。";
+        return;
+      }
+      meta.innerHTML =
+        `任务 <code>${escapeHtml(job.job_id)}</code> | ` +
+        `状态 <code>${escapeHtml(job.status)}</code> | ` +
+        `返回码 <code>${escapeHtml(job.return_code ?? "-")}</code>`;
+      output.textContent = job.output || "任务还没有输出。";
+    }
+
+    function renderCrawlerTable() {
+      const crawlers = state.summary?.crawlers || [];
+      const container = document.getElementById("crawlerTable");
+      container.innerHTML = crawlers.map((crawler) => {
+        const breakdown = (crawler.url_kind_breakdown || []).slice(0, 14);
+        const states = crawler.crawl_state || [];
+        const enabled = crawler.enabled ? "启用中" : "未启用";
+        return `
+          <article class="crawler-card">
+            <div class="crawler-header">
+              <div>
+                <div class="crawler-name">${escapeHtml(crawler.crawler_name || "")}</div>
+                <div class="muted" style="margin-top: 6px;">
+                  ${escapeHtml(enabled)}
+                  ${crawler.last_item_update ? ` | items 更新 ${escapeHtml(crawler.last_item_update)}` : ""}
+                  ${crawler.last_download_update ? ` | downloads 更新 ${escapeHtml(crawler.last_download_update)}` : ""}
+                </div>
+              </div>
+              <span class="status-pill ${crawler.pending_count > 0 ? "status-running" : "status-done"}">
+                ${crawler.pending_count > 0 ? "PENDING" : "IDLE"}
+              </span>
+            </div>
+            <div class="crawler-stats">
+              <div class="stat"><div class="stat-label">Categories</div><div class="stat-value">${crawler.categories_total ?? 0}</div></div>
+              <div class="stat"><div class="stat-label">Items</div><div class="stat-value">${crawler.items_total ?? 0}</div></div>
+              <div class="stat"><div class="stat-label">Downloads</div><div class="stat-value">${crawler.downloads_total ?? 0}</div></div>
+              <div class="stat"><div class="stat-label">Pending</div><div class="stat-value">${crawler.pending_count ?? 0}</div></div>
+              <div class="stat"><div class="stat-label">Done</div><div class="stat-value">${crawler.done_count ?? 0}</div></div>
+              <div class="stat"><div class="stat-label">Failed</div><div class="stat-value">${crawler.failed_count ?? 0}</div></div>
+            </div>
+            <div class="subgrid">
+              <div class="mini-block">
+                <h3>下载类型明细</h3>
+                <div class="mini-list">
+                  ${breakdown.length ? breakdown.map((row) => `
+                    <div class="mini-row">
+                      <strong title="${escapeHtml(row.url_kind || "")}">${escapeHtml(row.url_kind || "")}</strong>
+                      <span>总 ${row.total_count ?? 0}</span>
+                      <span>待 ${row.pending_count ?? 0}</span>
+                      <span>成 ${row.done_count ?? 0}</span>
+                    </div>
+                  `).join("") : `<div class="muted">暂无下载记录。</div>`}
+                </div>
+              </div>
+              <div class="mini-block">
+                <h3>Crawl State</h3>
+                <div class="mini-list">
+                  ${states.length ? states.map((row) => `
+                    <div class="state-row">
+                      <div><code>${escapeHtml(row.state_key || "")}</code></div>
+                      <div>${escapeHtml(row.state_value || "")}</div>
+                      <div class="muted">${escapeHtml(row.updated_at || "")}</div>
+                    </div>
+                  `).join("") : `<div class="muted">暂无分页状态。</div>`}
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function buildRequestLogHtml(logs) {
+      if (!logs.length) {
+        return `<div class="request-entry"><div class="request-meta">还没有请求日志。</div></div>`;
+      }
+      return logs.map((entry) => {
+        const scope = String(entry.scope || "unknown");
+        const crawlerName = String(entry.crawler_name || "");
+        const event = String(entry.event || "");
+        const failed = /failed|retry|parse_failed/i.test(event);
+        const badgeClass = `${scope === "download" ? "download" : ""} ${failed ? "failed" : ""}`.trim();
+        const method = entry.method ? `${escapeHtml(entry.method)} ` : "";
+        const endpoint = escapeHtml(entry.endpoint || entry.endpoint_key || "");
+        const url = escapeHtml(entry.url || entry.url_path || "");
+        const statusCode = entry.status_code ? `status=${escapeHtml(entry.status_code)}` : "";
+        const elapsed = entry.elapsed_ms ? `elapsed=${escapeHtml(entry.elapsed_ms)}ms` : "";
+        const attempt = entry.attempt ? `attempt=${escapeHtml(entry.attempt)}` : "";
+        const error = entry.error ? `<div class="request-meta">error=${escapeHtml(entry.error)}</div>` : "";
+        const payloadSummary = entry.payload_summary ? `<div class="request-meta">payload=${escapeHtml(JSON.stringify(entry.payload_summary))}</div>` : "";
+        return `
+          <div class="request-entry">
+            <div class="request-topline">
+              <span class="request-badge ${badgeClass}">${escapeHtml(scope)}</span>
+              <span class="request-badge ${failed ? "failed" : ""}">${escapeHtml(event)}</span>
+              <span class="request-meta">${escapeHtml(entry.timestamp || "")}</span>
+              <span class="request-meta">${escapeHtml(crawlerName)}</span>
+              <span class="request-meta">${statusCode}</span>
+              <span class="request-meta">${elapsed}</span>
+              <span class="request-meta">${attempt}</span>
+            </div>
+            <div class="request-url">${method}${endpoint}</div>
+            ${url ? `<div class="request-meta">${url}</div>` : ""}
+            ${payloadSummary}
+            ${error}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderRequestLogs() {
+      const container = document.getElementById("requestStream");
+      if (!container) return;
+      container.innerHTML = buildRequestLogHtml(requestLogState.logs || []);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function renderAll() {
+      setMessage(state.message || "");
+      renderOverview();
+      renderCommands();
+      renderQuickAuth();
+      renderParallelCrawlerOptions();
+      renderJobs();
+      renderRequestLogs();
+      renderCrawlerTable();
+      switchTab(activeTab);
+    }
+
+    async function refreshStatus() {
+      if (statusRefreshInFlight) {
+        return;
+      }
+      statusRefreshInFlight = true;
+      const response = await fetch("/api/status", { cache: "no-store" });
+      try {
+        const data = await response.json();
+        if (!Array.isArray(data.command_cards) || !data.command_cards.length) {
+          data.command_cards = Array.isArray(state.command_cards) && state.command_cards.length
+            ? state.command_cards
+            : buildFallbackCommandCards(data.commands || []);
+        }
+        state = data;
+        renderAll();
+      } finally {
+        statusRefreshInFlight = false;
+      }
+    }
+
+    async function refreshRequestLogs() {
+      if (requestLogRefreshInFlight) {
+        return;
+      }
+      requestLogRefreshInFlight = true;
+      const scope = (document.getElementById("requestScope")?.value || "all").trim();
+      const crawler = (document.getElementById("requestCrawler")?.value || "_all").trim() || "_all";
+      const limit = (document.getElementById("requestLimit")?.value || "120").trim() || "120";
+      try {
+        const response = await fetch(
+          `/api/request-logs?scope=${encodeURIComponent(scope)}&crawler=${encodeURIComponent(crawler)}&limit=${encodeURIComponent(limit)}`,
+          { cache: "no-store" }
+        );
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || "请求日志刷新失败");
+        }
+        requestLogState.logs = Array.isArray(data.logs) ? data.logs : [];
+        renderRequestLogs();
+      } finally {
+        requestLogRefreshInFlight = false;
+      }
+    }
+
+    async function runCommand() {
+      const command = document.getElementById("commandInput").value.trim();
+      if (!command) {
+        setMessage("请先输入一条命令。");
+        return;
+      }
+      const response = await fetch("/api/run-command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        setMessage(data.error || "命令执行失败。");
+        return;
+      }
+      selectedJobId = data.job?.job_id || null;
+      setMessage(`命令已启动：${command}`);
+      activeTab = "jobs";
+      await refreshStatus();
+    }
+
+    async function stopSelectedJob() {
+      const jobs = state.jobs || [];
+      const job = jobs.find((item) => item.job_id === selectedJobId);
+      if (!job) {
+        setMessage("请先选中一个任务。");
+        return;
+      }
+      const response = await fetch(`/api/jobs/${encodeURIComponent(job.job_id)}/stop`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        setMessage(data.error || "停止任务失败。");
+        return;
+      }
+      setMessage(`已请求停止任务：${job.job_id}`);
+      await refreshStatus();
+    }
+
+    async function stopAllJobs() {
+      const response = await fetch("/api/stop-all-jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        setMessage(data.error || "停止全部任务失败。");
+        return;
+      }
+      const count = Array.isArray(data.stopped_job_ids) ? data.stopped_job_ids.length : 0;
+      setMessage(`已请求停止全部任务，停止 ${count} 个运行中任务。`);
+      await refreshStatus();
+    }
+
+    document.querySelectorAll(".tab-button").forEach((button) => {
+      button.addEventListener("click", () => {
+        switchTab(button.getAttribute("data-tab"));
+      });
+    });
+
+    document.getElementById("goCommandsButton").addEventListener("click", () => switchTab("commands"));
+    document.getElementById("goCrawlersButton").addEventListener("click", () => switchTab("crawlers"));
+    document.getElementById("goConfigButton").addEventListener("click", () => switchTab("config"));
+
+    document.getElementById("commandCategorySelect").addEventListener("change", (event) => {
+      selectedCommandCategory = event.target.value || "";
+      selectedCommandBase = "";
+      selectedCommandValue = "";
+      renderCommands();
+    });
+
+    document.getElementById("commandBaseSelect").addEventListener("change", (event) => {
+      selectedCommandBase = event.target.value || "";
+      selectedCommandValue = "";
+      renderCommands();
+    });
+
+    document.getElementById("commandPresetSelect").addEventListener("change", (event) => {
+      selectedCommandValue = event.target.value || "";
+      renderCommands();
+    });
+
+    document.getElementById("runCommandButton").addEventListener("click", () => {
+      runCommand().catch((error) => {
+        setMessage(`命令执行失败：${error}`);
+      });
+    });
+
+    document.getElementById("runParallelCrawlButton").addEventListener("click", () => {
+      try {
+        document.getElementById("commandInput").value = buildParallelCrawlCommand();
+      } catch (error) {
+        setMessage(`并发命令生成失败：${error}`);
+        return;
+      }
+      runCommand().catch((error) => {
+        setMessage(`并发抓取启动失败：${error}`);
+      });
+    });
+
+    document.getElementById("fillParallelCommandButton").addEventListener("click", () => {
+      try {
+        document.getElementById("commandInput").value = buildParallelCrawlCommand();
+        setMessage("并发抓取命令已填入命令框。");
+      } catch (error) {
+        setMessage(`并发命令生成失败：${error}`);
+      }
+    });
+
+    document.getElementById("refreshButton").addEventListener("click", () => {
+      refreshStatus().catch((error) => {
+        setMessage(`刷新失败：${error}`);
+      });
+    });
+
+    document.getElementById("refreshRequestsButton").addEventListener("click", () => {
+      refreshRequestLogs().catch((error) => {
+        setMessage(`请求日志刷新失败：${error}`);
+      });
+    });
+
+    document.getElementById("stopSelectedJobButton").addEventListener("click", () => {
+      stopSelectedJob().catch((error) => {
+        setMessage(`停止任务失败：${error}`);
+      });
+    });
+
+    document.getElementById("stopAllJobsButton").addEventListener("click", () => {
+      stopAllJobs().catch((error) => {
+        setMessage(`停止全部任务失败：${error}`);
+      });
+    });
+
+    renderAll();
+    setInterval(() => {
+      refreshStatus().catch(() => {});
+    }, 4000);
+    setInterval(() => {
+      refreshRequestLogs().catch(() => {});
+    }, 2000);
+  </script>
+</body>
+</html>
